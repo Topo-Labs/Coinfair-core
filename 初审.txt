@@ -1,0 +1,225 @@
+# 三审 9-10
+1. CCK01
+Ans：已修改
+
+2. BAC07
+Ans：已将事件触发提前
+
+3. BAC05
+Ans：同CCK01，已修改
+
+4. CFV09
+Ans：理论上四舍五入会导致下一个用户用0个x代币换出很小的数量的y，这个数量级经过估计至少是10^-10以下，目前来看，这个数量的y不会覆盖gas费用。
+
+5. CFV12
+Ans：我们明白中心化会带来的风险，并会在项目上线时将权限转移到多签钱包，并会考虑引入DAO或与用户分享信息来提高我们的透明度。
+
+6. CFV05
+Ans：目前的限制是针对新币，即由项目方刚发出的币。我们也清楚这只能在一定程度上作出限制，并不是最好的方法。为此我们在加紧开发V2.5，希望可以从根源解决问题，关于合约可能会新增的一些功能的审计，我们会与BD继续沟通。
+
+7. CCK03
+Ans：同CFV12
+
+8. BAC03
+Ans：关于nft领取的详细说明
+	1. 领取的是SBT，仅作为社区文化和获利的凭证，不可转移，最多获得一个。
+	2. 操作流程中，用户A mint多个NFT，由其社区成员B,C等领取，并不由A自己领取，所以A无法	领取其自身mint的NFT。
+	3. 在初始mint的时候，因为NFT还没有被B，C领取，所以NFT会暂存在合约内。
+	4. 我们设置了三级的社区关系，所以不允许一个用户的上级/上上级是用户自己
+9. BAC01
+Ans：已修改
+
+# 二审 9-5
+## 讨论部分
+1. 缺少测试代码
+Ans：无法提供完整测试代码
+
+2. 费用讨论
+描述：需要澄清如何分配手续费，并且因为手续费收取方式的改变，产生了一些遗留的无效代码，可以删除
+
+Ans：手续费用于：项目方分配、交易返佣、协议收入。关于_mintfee等无效代码，因不影响整体，暂不删除。
+
+3. 初始流动性讨论
+描述：在 Uniswap 代码中，初始流动性由 $\sqrt{K}$ 的初始值决定。然而，由于不变公式可能不同，情况不再如此。我们建议明确设计选择，始终通过$\sqrt{amount0 * amount1}$ 来铸造初始流动性。
+
+Ans：不明确，代码中我们是以sqrt(amount0 * amount1)铸造初始流动性的，可进一步讨论。
+
+4. 支出金额和收入金额偏差
+描述：特别是，我们建议确保重复舍入不会导致用户获得的amountOut小于他们可以收到的最佳金额的金额，或amountIn大于他们需要获得所需输出金额的最佳金额的金额。
+
+Ans：
+	‘’‘        
+	require(
+            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
+        );
+	’‘’
+在代码中我们在最外层检查了最后的值和amountOutMin/amountInMax之间的关系。关于exp的推导将在下一点说明。
+关于逻辑简化，暂不修改。
+
+5. exp函数的讨论
+描述：建议记录预期的行为和输入exp()。此外，我们建议确保所有值都按预期处理，并且缩放不会因逻辑溢出而导致任何意外恢复。
+
+Ans：Coinfair白皮书中声明，CoinfairV2只支持在一定范围内的兑换。关于exp函数，我们在计算时采用先扩容再去精度的方法。
+具体来说，因为公式中计算了高次方，很容易导致溢出和精度损失，比如在计算x^32时，我们通过多次先平方再去精度的方法，一步一步获得需要的值。例子中所说的exp(1, 4, 1)确实会给出错误的值，但n=1这种情况不在我们允许的兑换范围内。
+
+## 优化部分
+1. 注释掉的代码
+描述：以下代码行被注释掉，并且没有被另一行代码替换
+require(to != _token0 && to != _token1, 'CoinFair: INVALID_TO');
+虽然我们假设这最初是为了帮助防止用户意外将令牌地址设置为to地址。
+
+Ans：代码应该恢复，已修改。
+
+2. 未删除的todo
+Ans：已删除
+
+3. 报价功能不一致
+描述：我们建议澄清函数上方的注释，以匹配上面描述的行为，并清楚地记录与其原始行为的任何差异。此外，我们建议实现quote()接受指数的函数或将其从代码库中删除，因为它目前未使用。
+
+Ans：已删除多余的quote函数
+
+4. 缺少零地址验证
+Ans：已经在9月1日初审中修改过
+
+5. 可以声明为不可变变量
+Ans：已经在9月1日初审中修改过
+
+## 次要严重程度问题
+1. maxMintAmount缺乏下限，缺乏透明度
+Ans：已经在9月1日初审中修改过
+
+2. 剩余代币不会返还
+Ans：已经在9月1日初审中修改过
+
+3. Claim和mint存在轻微可重入可能
+Ans：已经在9月1日初审中修改过
+
+4. 打字错误
+Ans：已经在9月1日初审中修改过
+
+5. 使用transfer发送eth
+Ans：已经在9月1日初审中修改过
+
+6. 不变性检查中的潜在舍入误差问题
+描述：来自的值exp()可能会有舍入误差并被向下舍入。这允许出现以下情况：用户可以在swap()不向合约提供任何资金的情况下进行调用，并获取最大数量的代币，这些代币仍会因舍入误差而保持不变检查。
+
+Ans：swap函数在执行这个require检查前已经执行了_safeTransfer的操作，我们认为无法在不提供任何资金的情况下进行调用并正常执行，可进一步讨论。
+	'''
+	exponent0 < exponent1 ? _safeTransfer(_token0, ICoinFairFactory(factory).feeTo(), fee_) : _safeTransfer(_token1, ICoinFairFactory(factory).feeTo(), fee_); //pay fee 
+        if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+        if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+	'''
+
+7. `ICoinFairFactory` 与 `CoinFairFactory` 的 `createPair()` 实现不匹配
+描述：接口ICoinFairFactory包含函数，但是，它不包含 的实现的输入createPair()。因此，作为继承，它不会完全实现所有方法。feecreatePair()CoinFairFactoryCoinFairFactoryICoinFairFactory
+
+Ans：   	
+	'''
+	function createPair(address tokenA, address tokenB,uint256 exponentA,uint256 exponentB,uint fee) external returns (address pair);    
+	function createPair(address tokenA, address tokenB,uint256 exponentA,uint256 exponentB,uint fee) external returns (address pair);
+	'''
+
+8. 在某些情况下累计价格可能不正确
+描述：根据白皮书，储备遵循公式 $X^n * Y = K$。因此，可以计算出一种代币相对于另一种代币的价格为
+$\frac{1}{n} * \frac{X}{Y}$ 和 $n * \frac{Y}{X}$
+然而，累积价格假设价格由 $Y/X$ 或 $X/Y$ 给出，这仅在 $n=1$ 时才会出现。
+如果使用累积价格来获得资产价格，则可能导致计算出错误的价格。
+
+Ans：price0CumulativeLast和price1CumulativeLast用于计算TWAP，外部预言机使用等。建议外部根据合约内代币数量，自行计算。
+
+9. 费用无上限
+Ans：已经在9月1日初审中修改过
+
+10. `BindAddress` 合约中不同层级的 URI 相同
+Ans：已经在9月1日初审中修改过
+
+11. 注释掉的代码允许用户规避费用
+描述：该swap()函数具有检查功能，以确保msg.sender注释掉router。因此，用户可以swap()直接从该对本身调用，而无需支付任何费用。
+
+Ans：已恢复注释，保证用户不能通过直接调用swap来跳过手续费
+
+12. 潜在的 DOS 攻击
+描述：任何人都可以调用该函数createPair()来为输入tokenA和创建一对tokenB。此外，在检查映射时，每对标记只能创建一对getPair。但是，对还包括与每个代币相关的指数和相关费用。攻击者可以createPair()使用不想要的指数或零费用进行调用。这将是可以为这些代币创建的唯一对，因此它将阻止协议为具有所需指数和费用的代币部署对。
+
+Ans：新增限制条件，要求创建代币对的地址必须拥有代币，这可以阻止对新项目的dos攻击
+	'''
+	require(amountA > 0 && amountB > 0,"You have to have the token to prove it's not a dos attack");
+	require(amountToken > 0,"You have to have the token to prove it's not a dos attack");
+	'''
+
+13. 领取nft的自循环
+Ans：已经在9月1日初审中修改过
+
+14. nft合约的中心化风险
+Ans：已经在9月1日初审中修改过
+
+15. claim() 中的令牌管理问题
+Ans：已经在9月1日初审中修改过
+
+============= ============= ============= ============= ============= =============
+
+# 初审 9-1
+## 优化部分
+1. 缺少零地址验证
+Ans：已修改
+
+2. 部分变量可以优化为不可变变量
+Ans：暂不修改，合约版本低于0.6.5
+
+## 次要严重程度问题
+
+1. maxMintAmount缺乏下限，缺乏透明度
+描述：合约使用变量maxMintAmount来限制最大值，可以任意改变，甚至设置为零。这对项目带来风险
+
+Ans：maxMintAmount是单次铸造nft的最大数量，为0会导致mint失败，且随意调整该数量不会导致用户损失，owner也不会通过抢先交易攻击获得任何收益，暂不修改
+
+2. 剩余代币不会返还
+描述：在用户付费铸造和领取nft的时候，如果支付超出最低要求的数量的代币，不会返还超出部分。
+
+Ans：为防止前端/聚合等bug导致用户意外支付过多的代币，已修改，目前超出部分会退回
+
+3. 打字错误
+描述：m文件中的字母似乎BindAddress.sol是印刷错误。这可能会导致意外行为或编译问题。为了确保代码的完整性和功能性，纠正此错误至关重要。
+
+Ans：函数名字就是getMCInfo，MC代表Mint和Claim，不是打字错误，暂不修改
+
+暂不修改
+
+4. Claim和mint存在轻微可重入可能
+描述：claim合约中的函数在完成所有状态更改之前BindAddress包含对该函数的外部调用transferFrom。但是，由于_mint和transferFrom函数在 ERC721 标准中的工作方式，成功重入攻击的风险很小。这些函数不易重新进入或被利用，攻击者无法通过这种方式获得对代币的未经授权的访问或操纵合约的状态以谋取私利。
+虽然理论上可行，但 ERC721 标准中铸造和转移代币的具体实现使得在这种情况下成功执行重入攻击的可能性极小。
+
+Ans：已修改，严格按照Check-Effects-Interactions
+
+5. 使用transfer发送eth
+描述：eip-1884中建议使用sendValue而不是transfer来发送eth
+
+Ans：已修改
+
+6. 费用无上限
+描述：合约中的变量fee没有设定限制，费用可能达到 100%。如果发生这种情况，用户将不会从合约中收到任何代币，从而导致投资完全损失。
+
+Ans：已修改，已经在addLiquidity，addliquidityETH，initialize三个函数中做限制
+
+7. NFT合约中不同层级的 URI 可以相同
+描述：合约使用三个不同的 URI（l1Uri、l2Uri和l3Uri）来表示不同级别的代币。但是，没有检查来确保这些 URI 是唯一的。如果为不同的级别设置相同的 URI，则会破坏设置不同级别的目的，因为所有代币都会指向相同的元数据，无论其级别如何。
+
+Ans：这部分由中心化控制，另外即使不同级别的nft的uri相同，也不会引起损失，暂不修改
+
+## 主要严重问题
+
+1. 领取nft的自循环
+描述：在合约claim的函数中BindAddress，如果用户第一次调用该函数时parent将地址设置为自己，则用户将来将无法领取任何代币。
+
+Ans：已修改，用户目前在领取地址A的nft的时候，地址A及其上级地址和上上级地址均不能是用户自己，阻止了三个地址间的上级循环
+
+2. nft合约的中心化风险
+描述：当前的项目设计，可能进行迭代以改进安全操作和去中心化水平，在大多数情况下，目前还无法完全解决。我们建议客户谨慎管理特权账户的私钥，以避免任何潜在的被黑客攻击的风险。一般来说，我们强烈建议通过去中心化机制或基于智能合约的账户来改进协议中的中心化特权或角色，并采用增强的安全实践，例如多重签名钱包。
+
+Ans：私钥安全由项目方自行负责，后续可转移至多签钱包。另外为了防止不小心放弃owner权限或其他误操作，用onlyCoinFair的modifier代替了onlyowner，其余暂不修改
+
+3. claim() 中的令牌管理问题
+描述：nft合约在调用claim的时候存在过度授权的问题，可能会允许用户领取多个nft
+
+Ans：已修改，严格限制了授权的nft的id。获取超过1个的nft对没有意义，无法转卖，但确实会给项目带来不必要的麻烦。
