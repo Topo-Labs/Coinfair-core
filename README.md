@@ -1,0 +1,1 @@
+# CoinFair-v2.5-core
