@@ -32,7 +32,7 @@ library TransferHelper {
 
 pragma solidity =0.6.6;
 
-interface ICoinFairRouter01 {
+interface ICoinFairWarmRouter {
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
 
@@ -57,7 +57,8 @@ interface ICoinFairRouter01 {
         uint amountBMin,
         address to,
         uint deadline,
-        uint8 poolType
+        uint8 poolType,
+        uint fee
     ) external returns (uint amountA, uint amountB);
     function removeLiquidityETH(
         address token,
@@ -66,34 +67,41 @@ interface ICoinFairRouter01 {
         uint amountETHMin,
         address to,
         uint deadline,
-        uint8 poolType
+        uint8 poolType,
+        uint fee
     ) external returns (uint amountToken, uint amountETH);
-    // function removeLiquidityWithPermit(
-    //     address tokenA,
-    //     address tokenB,
-    //     uint liquidity,
-    //     uint amountAMin,
-    //     uint amountBMin,
-    //     address to,
-    //     uint deadline,
-    //     uint8 poolType,
-    //     bool approveMax, uint8 v, bytes32 r, bytes32 s
-    // ) external returns (uint amountA, uint amountB);
-    // function removeLiquidityETHWithPermit(
-    //     address token,
-    //     uint liquidity,
-    //     uint amountTokenMin,
-    //     uint amountETHMin,
-    //     address to,
-    //     uint deadline,
-    //     uint8 poolType,
-    //     bool approveMax, uint8 v, bytes32 r, bytes32 s
-    // ) external returns (uint amountToken, uint amountETH);
+    function removeLiquidityETHSupportingFeeOnTransferTokens(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline,
+        uint8 poolType,
+        uint fee
+    ) external returns (uint amountETH);
+
+    function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut, uint fee, bool roolOver) external view returns (uint amountOut, uint amountFee);
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut, uint fee, bool roolOver) external view returns (uint amountIn, uint amountFee);
+    function getAmountsOut(uint amountIn, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
+    function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
+}
+
+// File: contracts\interfaces\ICoinFairRouter02.sol
+
+pragma solidity =0.6.6;
+
+interface ICoinFairHotRouter{
+    function factory() external pure returns (address);
+    function WETH() external pure returns (address);
+
     function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external returns (uint[] memory amounts);
@@ -102,61 +110,30 @@ interface ICoinFairRouter01 {
         uint amountInMax,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external returns (uint[] memory amounts);
-    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         payable
         returns (uint[] memory amounts);
-    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         returns (uint[] memory amounts);
-    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         returns (uint[] memory amounts);
-    function swapETHForExactTokens(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+    function swapETHForExactTokens(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         payable
         returns (uint[] memory amounts);
-
-    function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut, uint fee) external view returns (uint amountOut, uint amountFee);
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut, uint fee) external view returns (uint amountIn, uint amountFee);
-    function getAmountsOut(uint amountIn, address[] calldata path, uint8[] calldata poolTypePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
-    function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
-}
-
-// File: contracts\interfaces\ICoinFairRouter02.sol
-
-pragma solidity =0.6.6;
-
-interface ICoinFairRouter02 is ICoinFairRouter01 {
-    function removeLiquidityETHSupportingFeeOnTransferTokens(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline,
-        uint8 poolType
-    ) external returns (uint amountETH);
-    // function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
-    //     address token,
-    //     uint liquidity,
-    //     uint amountTokenMin,
-    //     uint amountETHMin,
-    //     address to,
-    //     uint deadline,
-    //     uint8 poolType,
-    //     bool approveMax, uint8 v, bytes32 r, bytes32 s
-    // ) external returns (uint amountETH);
-
     function swapExactTokensForTokensSupportingFeeOnTransferTokens(
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external;
@@ -164,6 +141,7 @@ interface ICoinFairRouter02 is ICoinFairRouter01 {
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external payable;
@@ -172,9 +150,16 @@ interface ICoinFairRouter02 is ICoinFairRouter01 {
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external;
+
+    function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut, uint fee, bool roolOver) external view returns (uint amountOut, uint amountFee);
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut, uint fee, bool roolOver) external view returns (uint amountIn, uint amountFee);
+    function getAmountsOut(uint amountIn, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
+    function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
 // File: contracts\interfaces\ICoinFairFactory.sol
@@ -184,7 +169,7 @@ pragma solidity =0.6.6;
 interface ICoinFairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
-    function getPair(address tokenA, address tokenB, uint8 poolType) external view returns (address pair);
+    function getPair(address tokenA, address tokenB, uint8 poolType, uint fee) external view returns (address pair);
     function allPairs(uint) external view returns (address pair);
     function allPairsLength() external view returns (uint);
 
@@ -235,16 +220,13 @@ interface ICoinFairPair {
     function totalSupply() external view returns (uint);
     function balanceOf(address owner) external view returns (uint);
     function allowance(address owner, address spender) external view returns (uint);
-    
+
     function approve(address spender, uint value) external returns (bool);
     function transfer(address to, uint value) external returns (bool);
     function transferFrom(address from, address to, uint value) external returns (bool);
 
     function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
     function nonces(address owner) external view returns (uint);
-
-    // function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 
     event Mint(address indexed sender, uint amount0, uint amount1);
     event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
@@ -268,10 +250,16 @@ interface ICoinFairPair {
     function price1CumulativeLast() external view returns (uint);
     function kLast() external view returns (uint);
     function getFee() external view returns (uint);
-    function getPoolType() external view returns (uint);
+    function getPoolType() external view returns (uint8);
+    function getProjectCommunityAddress()external view returns (address);
+    function getRoolOver()external view returns (bool);
+    function setIsPoolFeeOn(uint) external;
+    function setRoolOver(bool) external;
+    function setProjectCommunityAddress(address)external;
+
     function mint(address to) external returns (uint liquidity);
     function burn(address to) external returns (uint amount0, uint amount1);
-    function swap(uint amount0Out, uint amount1Out, uint fee, address to, bytes calldata data) external;
+    function swap(uint amount0Out, uint amount1Out, uint fee ,address to, bytes calldata data) external;
     function skim(address to) external;
     function sync() external;
 
@@ -449,27 +437,27 @@ library CoinFairLibrary {
     }
 
     // calculates the CREATE2 address for a pair without making any external calls
-    function pairFor(address factory, address tokenA, address tokenB,uint8 poolType) internal pure returns (address pair) {
+    function pairFor(address factory, address tokenA, address tokenB, uint8 poolType, uint fee) internal pure returns (address pair) {
         (address token0, address token1) = sortTokens(tokenA, tokenB);
         pair = address(uint(keccak256(abi.encodePacked(
                 hex'ff',
                 factory,
-                keccak256(abi.encodePacked(token0, token1, poolType)),
-                hex'98f59b988fa5c0651e2abf23518f56d4447f56ddc4ea692f47cc5bbbc9e7c5e5' // init code hash
+                keccak256(abi.encodePacked(token0, token1, poolType, fee)),
+                hex'8744a0bbd57ad0638c2f2f0a72dccb8e2b9edb70aa7dd681a0045a6c7cf4f065' // init code hash
             ))));
     }
 
     // fetches and sorts the reserves for a pair
-    function getReserves(address factory, address tokenA, address tokenB,uint8 poolType) internal view returns (uint reserveA, uint reserveB) {
-        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType)).token0();
-        (uint reserve0, uint reserve1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType)).getReserves();
+    function getReserves(address factory, address tokenA, address tokenB,uint8 poolType, uint fee) internal view returns (uint reserveA, uint reserveB) {
+        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
+        (uint reserve0, uint reserve1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getReserves();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
     // fetches and sorts the exponents for a pair
-    function getExponents(address factory, address tokenA, address tokenB, uint8 poolType) internal view returns (uint exponentA, uint exponentB) {
-        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType)).token0();
-        (uint256 exponent0, uint256 exponent1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType)).getExponents();
+    function getExponents(address factory, address tokenA, address tokenB, uint8 poolType, uint fee) internal view returns (uint exponentA, uint exponentB) {
+        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
+        (uint256 exponent0, uint256 exponent1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getExponents();
         (exponentA, exponentB) = tokenA == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
     }
 
@@ -487,33 +475,34 @@ library CoinFairLibrary {
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     // Based on the K conservation formula, when the amountIn A token is entered, how many B tokens need to be returned after deducting the service charge, and the result is rounded down
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee) public pure returns (uint amountOut, uint amountOutFee) {
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountOut, uint amountOutFee) {
         require(amountIn > 0, 'CoinFairLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
-        if (exponentIn < exponentOut){
+        if (exponentIn < exponentOut ||
+            (exponentIn == exponentOut && roolOver)){
             // Round up the result of exp to make the output smaller
-        uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-        uint256 amountInReal = amountIn.mul(uint256(1000).sub(fee))/1000;
-        // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
-        uint256 denominator = exp(reserveIn.add(amountInReal), exponentIn, 32); 
-        // Round up here to make the output smaller
-        uint256 tmp = K.add(denominator-1)/denominator; 
-        // Round up here to make the output smaller
-        tmp = exp(tmp, 32, exponentOut).add(1); 
-        amountOut = reserveOut.sub(tmp);
-        amountOutFee = amountIn.sub(amountInReal);
+            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
+            uint256 amountInReal = amountIn.mul(uint256(1000).sub(fee))/1000;
+            // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
+            uint256 denominator = exp(reserveIn.add(amountInReal), exponentIn, 32); 
+            // Round up here to make the output smaller
+            uint256 tmp = K.add(denominator-1)/denominator; 
+            // Round up here to make the output smaller
+            tmp = exp(tmp, 32, exponentOut).add(1); 
+            amountOut = reserveOut.sub(tmp);
+            amountOutFee = amountIn.sub(amountInReal);
         }else{
-        // Round up the result of exp to make the output smaller
-        uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-        // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
-        uint256 denominator = exp(reserveIn.add(amountIn), exponentIn, 32); 
-        // Round up here to make the output smaller
-        uint256 tmp = K.add(denominator-1)/denominator; 
-        // Round up here to make the output smaller
-        tmp = exp(tmp, 32, exponentOut).add(1);
-        uint256 amountOutTotal = reserveOut.sub(tmp);
-        amountOut = amountOutTotal.mul(uint256(1000).sub(fee))/1000;
-        amountOutFee = amountOutTotal.sub(amountOut);
+            // Round up the result of exp to make the output smaller
+            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
+            // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
+            uint256 denominator = exp(reserveIn.add(amountIn), exponentIn, 32); 
+            // Round up here to make the output smaller
+            uint256 tmp = K.add(denominator-1)/denominator; 
+            // Round up here to make the output smaller
+            tmp = exp(tmp, 32, exponentOut).add(1);
+            uint256 amountOutTotal = reserveOut.sub(tmp);
+            amountOut = amountOutTotal.mul(uint256(1000).sub(fee))/1000;
+            amountOutFee = amountOutTotal.sub(amountOut);
         }
         
     }
@@ -521,65 +510,70 @@ library CoinFairLibrary {
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
     // Based on the K conservation formula, if you want to replace the amountOut B token, how many A tokens need to be input when the service charge is included, and the result is rounded up
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee) public pure returns (uint amountIn, uint amountInFee) {
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountIn, uint amountInFee) {
         require(amountOut > 0, 'CoinFairLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
-        if (exponentIn < exponentOut){
-        // Round up the result of exp to make the input larger
-        uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-        // The exp result itself is rounded down, and the input becomes larger
-        uint256 denominator = exp(reserveOut.sub(amountOut), exponentOut, 32);
-        // The result is rounded up to make the input larger
-        uint256 tmp = K.add(denominator-1)/denominator;
-        // The result is rounded up to make the input larger
-        tmp = exp(tmp, 32, exponentIn).add(1);
-        tmp = tmp.sub(reserveIn);
-        // The result is rounded up to make the input larger
-        amountIn = tmp.mul(1000).add(uint256(999).sub(fee)) / (uint256(1000).sub(fee));
-        amountInFee = amountIn.sub(tmp);
+        if (exponentIn < exponentOut ||
+            (exponentIn == exponentOut && roolOver)){
+            // Round up the result of exp to make the input larger
+            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
+            // The exp result itself is rounded down, and the input becomes larger
+            uint256 denominator = exp(reserveOut.sub(amountOut), exponentOut, 32);
+            // The result is rounded up to make the input larger
+            uint256 tmp = K.add(denominator-1)/denominator;
+            // The result is rounded up to make the input larger
+            tmp = exp(tmp, 32, exponentIn).add(1);
+            tmp = tmp.sub(reserveIn);
+            // The result is rounded up to make the input larger
+            amountIn = tmp.mul(1000).add(uint256(999).sub(fee)) / (uint256(1000).sub(fee));
+            amountInFee = amountIn.sub(tmp);
         }else{
-        // Round up the result of exp to make the input larger
-        uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-        uint amountOutTotal = amountOut.mul(uint256(1000).add(fee))/1000;
-        // The exp result itself is rounded down, and the input becomes larger
-        uint256 denominator = exp(reserveOut.sub(amountOutTotal), exponentOut, 32);
-        // The result is rounded up to make the input larger
-        uint256 tmp = K.add(denominator-1)/denominator;
-        // The result is rounded up to make the input larger
-        tmp = exp(tmp, 32, exponentIn).add(1);
-        amountIn = tmp.sub(reserveIn);
-        amountInFee = amountOutTotal.sub(amountOut);
+            // Round up the result of exp to make the input larger
+            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
+            uint amountOutTotal = amountOut.mul(uint256(1000).add(fee))/1000;
+            // The exp result itself is rounded down, and the input becomes larger
+            uint256 denominator = exp(reserveOut.sub(amountOutTotal), exponentOut, 32);
+            // The result is rounded up to make the input larger
+            uint256 tmp = K.add(denominator-1)/denominator;
+            // The result is rounded up to make the input larger
+            tmp = exp(tmp, 32, exponentIn).add(1);
+            amountIn = tmp.sub(reserveIn);
+            amountInFee = amountOutTotal.sub(amountOut);
         }
     }
 
     // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOut(address factory, uint amountIn, address[] memory path, uint8[] memory poolTypePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee){
+    function getAmountsOut(address factory, uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee){
         require(path.length >= 2, 'CoinFairLibrary: INVALID_PATH');
         require(path.length == poolTypePath.length + 1, 'CoinFair: INVALID_LENGTH');
         amounts = new uint[](path.length);
         amountsFee = new uint[](path.length - 1);
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1], poolTypePath[i]);
-            (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i], path[i + 1], poolTypePath[i]);
+            require(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i]) != address(0), 'CoinFair:NO_PAIR');
+            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]);
+            (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]);
             //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i], path[i + 1]);
-            uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i])).getFee();
-            (amounts[i + 1], amountsFee[i]) = getAmountOut(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, _fee);
+            // uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getFee();
+            bool roolOver = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getRoolOver();
+            (amounts[i + 1], amountsFee[i]) = getAmountOut(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i], roolOver);
         }
     }
 
     // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsIn(address factory, uint amountOut, address[] memory path, uint8[] memory poolTypePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee) {
+    function getAmountsIn(address factory, uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee) {
         require(path.length >= 2, 'CoinFairLibrary: INVALID_PATH');
         amounts = new uint[](path.length);
         amountsFee = new uint[](path.length - 1);
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i], poolTypePath[i - 1]);
-            (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i - 1], path[i], poolTypePath[i - 1]);
+            require(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1]) != address(0), 'CoinFair:NO_PAIR');
+            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1]);
+            (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1]);
             //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i - 1], path[i]);
-            uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1])).getFee();
-            (amounts[i - 1], amountsFee[i - 1]) = getAmountIn(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, _fee);
+            // uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getFee();
+            bool roolOver = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getRoolOver();
+            (amounts[i - 1], amountsFee[i - 1]) = getAmountIn(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i - 1], roolOver);
         }
     }
 }
@@ -614,11 +608,11 @@ interface IWETH {
     function withdraw(uint) external;
 }
 
-// File: contracts\CoinFairRouter.sol
+// File: contracts\CoinFairWarmRouter.sol
 
 pragma solidity =0.6.6;
 
-contract CoinFairRouter is ICoinFairRouter02 {
+contract CoinFairWarmRouter is ICoinFairWarmRouter {
     using SafeMath for uint;
 
     address public immutable override factory;
@@ -647,9 +641,10 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountBDesired,
         uint amountAMin,
         uint amountBMin
-    ) internal virtual returns (uint amountA, uint amountB, uint8 poolType) {
-        (uint reserveA, uint reserveB, uint8 _poolType) = _addLiquidityAssist_(_addLiquidityCmd);
-        poolType = _poolType;
+    ) internal virtual returns (uint, uint, uint8, uint) {
+        (uint reserveA, uint reserveB, uint8 _poolType, uint _fee) = _addLiquidityAssist_(_addLiquidityCmd);
+        uint amountA;
+        uint amountB;
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
@@ -664,20 +659,23 @@ contract CoinFairRouter is ICoinFairRouter02 {
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
+
+        return (amountA, amountB, _poolType, _fee);
     }
 
-    function _addLiquidityAssist_(bytes memory _addLiquidityCmd)internal virtual returns(uint reserveA, uint reserveB, uint8 poolType){
-        (address tokenA, address tokenB, uint256 exponentA, uint256 exponentB, uint fee) = abi.decode(_addLiquidityCmd,(address, address, uint256, uint256, uint));
+    function _addLiquidityAssist_(bytes memory _addLiquidityCmd)internal virtual returns(uint reserveA, uint reserveB, uint8 poolType, uint fee){
+        (address tokenA, address tokenB, uint256 exponentA, uint256 exponentB, uint _fee) = abi.decode(_addLiquidityCmd,(address, address, uint256, uint256, uint));
+        fee = _fee;
         if(exponentA == 32 && exponentB == 32){poolType=1;}
         else if (exponentA == 32 && exponentB == 8){poolType = 2;}
         else if (exponentA == 8 && exponentB == 32){poolType = 3;}
         else if (exponentA == 32 && exponentB == 1){poolType = 4;}
         else if (exponentA == 1 && exponentB == 32){poolType = 5;}
         // create the pair if it doesn't exist yet
-        if (ICoinFairFactory(factory).getPair(tokenA, tokenB, poolType) == address(0)) {
-             ICoinFairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,fee);
+        if (ICoinFairFactory(factory).getPair(tokenA, tokenB, poolType, _fee) == address(0)) {
+             ICoinFairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,_fee);
         }
-        (reserveA, reserveB) = CoinFairLibrary.getReserves(factory, tokenA, tokenB, poolType);
+        (reserveA, reserveB) = CoinFairLibrary.getReserves(factory, tokenA, tokenB, poolType, _fee);
     }
 
     function addLiquidity(
@@ -687,18 +685,20 @@ contract CoinFairRouter is ICoinFairRouter02 {
         bytes calldata addLiquidityCmd,
         address to,
         uint deadline) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
+            
         uint8 poolType;
-        (amountA, amountB, poolType) = _addLiquidityAssist(tokenA,tokenB,addLiquidityCmd);
+        uint fee;
+        (amountA, amountB, poolType, fee) = _addLiquidityAssist(tokenA,tokenB,addLiquidityCmd);
         // require(amountA > 0 && amountB > 0,"You have to have the token to prove it's not a dos attack");
-        address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType);
+        address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType, fee);
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
         liquidity = ICoinFairPair(pair).mint(to);
     }
 
-    function _addLiquidityAssist(address tokenA, address tokenB, bytes memory addLiquidityCmd)internal returns(uint,uint,uint8){
+    function _addLiquidityAssist(address tokenA, address tokenB, bytes memory addLiquidityCmd)internal returns(uint,uint,uint8,uint){
         (uint amountADesired,uint amountBDesired,uint amountAMin,uint amountBMin,uint8 swapN,uint fee) = abi.decode(addLiquidityCmd,(uint,uint,uint,uint,uint8,uint));
-        require(fee == 3 || fee == 5 || fee == 10, "ERROR FEE");
+        require(fee == 1 || fee == 3 || fee == 5 || fee == 10, "ERROR FEE");
         bytes memory _addLiquidityCmd;
         if(swapN == 1){
             _addLiquidityCmd = abi.encode(tokenA, tokenB, 32, 32, fee);
@@ -721,9 +721,9 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint fee
     ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) { 
         uint8 poolType;
-        (amountToken, amountETH, poolType) = _addLiquidityETHAssist(token,fee,addLiquidityETHCmd);
+        (amountToken, amountETH, poolType,) = _addLiquidityETHAssist(token,fee,addLiquidityETHCmd);
         // require(amountToken > 0,"You have to have the token to prove it's not a dos attack");
-        address pair = CoinFairLibrary.pairFor(factory, token, WETH, poolType);
+        address pair = CoinFairLibrary.pairFor(factory, token, WETH, poolType, fee);
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
@@ -732,9 +732,9 @@ contract CoinFairRouter is ICoinFairRouter02 {
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
     }
 
-    function _addLiquidityETHAssist(address token, uint fee, bytes memory addLiquidityETHCmd)internal returns(uint,uint,uint8){
+    function _addLiquidityETHAssist(address token, uint fee, bytes memory addLiquidityETHCmd)internal returns(uint,uint,uint8,uint){
         (uint amountTokenDesired,uint amountTokenMin,uint amountETHMin,uint8 swapN) = abi.decode(addLiquidityETHCmd,(uint,uint,uint,uint8));
-        require(fee == 3 || fee == 5 || fee == 10, "ERROR FEE");
+        require(fee == 1 || fee == 3 || fee == 5 || fee == 10, "ERROR FEE");
         bytes memory _addLiquidityCmd;
         if(swapN == 1){
             _addLiquidityCmd = abi.encode(token, WETH, 32, 32, fee);
@@ -765,16 +765,24 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountBMin,
         address to,
         uint deadline,
-        uint8 poolType
+        uint8 poolType,
+        uint fee
     ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-        address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType);
+        address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType, fee);
         ICoinFairPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-        (uint amount0, uint amount1) = ICoinFairPair(pair).burn(to);
-        (address token0,) = CoinFairLibrary.sortTokens(tokenA, tokenB);
-        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+
+        (amountA, amountB) = _removeLiquidityAssist(pair, to, tokenA, tokenB);
+
         require(amountA >= amountAMin, 'CoinFairRouter: INSUFFICIENT_A_AMOUNT');
         require(amountB >= amountBMin, 'CoinFairRouter: INSUFFICIENT_B_AMOUNT');
     }
+
+    function _removeLiquidityAssist(address pair, address to, address tokenA, address tokenB)internal returns(uint amountA, uint amountB){
+        (uint amount0, uint amount1) = ICoinFairPair(pair).burn(to);
+        (address token0,) = CoinFairLibrary.sortTokens(tokenA, tokenB);
+        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+    }
+    
     function removeLiquidityETH(
         address token,
         uint liquidity,
@@ -782,7 +790,8 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountETHMin,
         address to,
         uint deadline,
-        uint8 poolType
+        uint8 poolType, 
+        uint fee
     ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH) {
         (amountToken, amountETH) = removeLiquidity(
             token,
@@ -792,45 +801,13 @@ contract CoinFairRouter is ICoinFairRouter02 {
             amountETHMin,
             address(this),
             deadline,
-            poolType
+            poolType,
+            fee
         );
         TransferHelper.safeTransfer(token, to, amountToken);
         IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
     }
-
-    // function removeLiquidityWithPermit(
-    //     address tokenA,
-    //     address tokenB,
-    //     uint liquidity,
-    //     uint amountAMin,
-    //     uint amountBMin,
-    //     address to,
-    //     uint deadline,
-    //     uint8 poolType,
-    //     bool approveMax, uint8 v, bytes32 r, bytes32 s
-    // ) external virtual override returns (uint amountA, uint amountB) {
-    //     address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType);
-    //     uint value = approveMax ? uint(-1) : liquidity;
-    //     ICoinFairPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
-    //     (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline, poolType);
-    // }
-
-    // function removeLiquidityETHWithPermit(
-    //     address token,
-    //     uint liquidity,
-    //     uint amountTokenMin,
-    //     uint amountETHMin,
-    //     address to,
-    //     uint deadline,
-    //     uint8 poolType,
-    //     bool approveMax, uint8 v, bytes32 r, bytes32 s
-    // ) external virtual override returns (uint amountToken, uint amountETH) {
-    //     address pair = CoinFairLibrary.pairFor(factory, token, WETH, poolType);
-    //     uint value = approveMax ? uint(-1) : liquidity;
-    //     ICoinFairPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
-    //     (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline, poolType);
-    // }
 
     // **** REMOVE LIQUIDITY (supporting fee-on-transfer tokens) ****
     function removeLiquidityETHSupportingFeeOnTransferTokens(
@@ -840,7 +817,8 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountETHMin,
         address to,
         uint deadline,
-        uint8 poolType
+        uint8 poolType,
+        uint fee
     ) public virtual override ensure(deadline) returns (uint amountETH) {
         (, amountETH) = removeLiquidity(
             token,
@@ -850,42 +828,97 @@ contract CoinFairRouter is ICoinFairRouter02 {
             amountETHMin,
             address(this),
             deadline,
-            poolType
+            poolType,
+            fee
         );
         TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
         IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
     }
 
-    // function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
-    //     address token,
-    //     uint liquidity,
-    //     uint amountTokenMin,
-    //     uint amountETHMin,
-    //     address to,
-    //     uint deadline,
-    //     uint8 poolType,
-    //     bool approveMax, uint8 v, bytes32 r, bytes32 s
-    // ) external virtual override returns (uint amountETH) {
-    //     address pair = CoinFairLibrary.pairFor(factory, token, WETH, poolType);
-    //     uint value = approveMax ? uint(-1) : liquidity;
-    //     ICoinFairPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
-    //     amountETH = removeLiquidityETHSupportingFeeOnTransferTokens(
-    //         token, liquidity, amountTokenMin, amountETHMin, to, deadline, poolType
-    //     );
-    // }
+    // **** LIBRARY FUNCTIONS ****
+    function quote(uint amountA, uint reserveA, uint reserveB) public pure virtual override returns (uint amountB) {
+        return CoinFairLibrary.quote(amountA, reserveA, reserveB);
+    }
+
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
+        public
+        view
+        virtual
+        override
+        returns (uint amountOut,uint amountFee)
+    {   
+        return CoinFairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
+    }
+
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
+        public
+        view
+        virtual
+        override
+        returns (uint amountIn,uint amountFee)
+    {
+        return CoinFairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
+    }
+
+    function getAmountsOut(uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
+        public
+        view
+        virtual
+        override
+        returns (uint[] memory amounts,uint[] memory amountFees)
+    {
+        return CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
+    }
+
+    function getAmountsIn(uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
+        public
+        view
+        virtual
+        override
+        returns (uint[] memory amounts,uint[] memory amountFees)
+    {
+        return CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
+    }
+}
+
+
+// File: contracts\CoinFairHotRouter.sol
+
+pragma solidity =0.6.6;
+
+contract CoinFairHotRouter is ICoinFairHotRouter {
+    using SafeMath for uint;
+
+    address public immutable override factory;
+    address public immutable override WETH;
+
+    modifier ensure(uint deadline) {
+        require(deadline >= block.timestamp, 'CoinFairRouter: EXPIRED');
+        _;
+    }
+
+    constructor(address _factory) public {
+        require(_factory != address(0));
+        factory = _factory;
+        WETH = 0x4200000000000000000000000000000000000006;
+    }
+
+    receive() external payable {
+        assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
+    }
 
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
-    function _swap(uint[] memory amounts, uint[] memory amountsFee, address[] memory path, uint8[] memory poolTypePath, address _to) internal virtual {
+    function _swap(uint[] memory amounts, uint[] memory amountsFee, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
-            (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = CoinFairLibrary.sortTokens(input, output);
+            // (address input, address output) = (path[i], path[i + 1]);
+            (address token0,) = CoinFairLibrary.sortTokens(path[i], path[i + 1]);
             uint amountOut = amounts[i + 1];
-            (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? CoinFairLibrary.pairFor(factory, output, path[i + 2], poolTypePath[i + 1]) : _to;
+            (uint amount0Out, uint amount1Out) = path[i] == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
+            address to = i < path.length - 2 ? CoinFairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
         
-            ICoinFairPair(CoinFairLibrary.pairFor(factory, input, output, poolTypePath[i])).swap(
+            ICoinFairPair(CoinFairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i])).swap(
                 amount0Out, amount1Out, amountsFee[i], to, new bytes(0)
             );
         }
@@ -895,36 +928,58 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
         uint[] memory amountFee;
-        (amounts , amountFee) = CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath);
+        (amounts , amountFee) = CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
         require(amounts[amounts.length - 1] >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amounts[0]
-        );
+        _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
         
-        _swap(amounts, amountFee , path, poolTypePath, to);
+        _swap(amounts, amountFee , path, poolTypePath, feePath, to);
     }
+
+    function _safeTransferFromAssist(
+        address[] memory path,
+        uint8[] memory poolTypePath,
+        uint[] memory feePath,
+        uint[] memory amounts
+    ) internal {
+        TransferHelper.safeTransferFrom(
+            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]
+        );
+    }
+
     function swapTokensForExactTokens(
         uint amountOut,
         uint amountInMax,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
          uint[] memory amountFee;
-        (amounts,amountFee) = CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath);
+        (amounts,amountFee) = CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
         require(amounts[0] <= amountInMax, 'CoinFairRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amounts[0]
-        );
-        _swap(amounts, amountFee, path, poolTypePath, to);
+        _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
+        _swap(amounts, amountFee, path, poolTypePath, feePath, to);
     }
-    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+
+    function _swapTokensForExactTokensAssist(
+        address[] memory path,
+        uint8[] memory poolTypePath,
+        uint[] memory feePath,
+        uint[] memory amounts
+    ) internal {
+        TransferHelper.safeTransferFrom(
+            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]
+        );
+    }
+
+    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         virtual
         override
@@ -934,13 +989,14 @@ contract CoinFairRouter is ICoinFairRouter02 {
     {
         require(path[0] == WETH, 'CoinFairRouter: INVALID_PATH');
          uint[] memory amountFee;
-        (amounts,amountFee) = CoinFairLibrary.getAmountsOut(factory, msg.value, path, poolTypePath);
+        (amounts,amountFee) = CoinFairLibrary.getAmountsOut(factory, msg.value, path, poolTypePath, feePath);
         require(amounts[amounts.length - 1] >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amounts[0]));
-        _swap(amounts, amountFee, path, poolTypePath, to);
+        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]));
+        _swap(amounts, amountFee, path, poolTypePath, feePath, to);
     }
-    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+
+    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         virtual
         override
@@ -949,16 +1005,15 @@ contract CoinFairRouter is ICoinFairRouter02 {
     {
         require(path[path.length - 1] == WETH, 'CoinFairRouter: INVALID_PATH');
         uint[] memory amountFee;
-        (amounts,amountFee) = CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath);
+        (amounts,amountFee) = CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
         require(amounts[0] <= amountInMax, 'CoinFairRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender,     CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amounts[0]
-        );
-        _swap(amounts, amountFee, path, poolTypePath, address(this));
+        _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
+
+        _swap(amounts, amountFee, path, poolTypePath, feePath, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
-    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         virtual
         override
@@ -967,16 +1022,15 @@ contract CoinFairRouter is ICoinFairRouter02 {
     {
         require(path[path.length - 1] == WETH, 'CoinFairRouter: INVALID_PATH');
         uint[] memory amountFee;
-        (amounts ,amountFee)= CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath);
+        (amounts ,amountFee)= CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
         require(amounts[amounts.length - 1] >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amounts[0]
-        );
-        _swap(amounts, amountFee, path, poolTypePath, address(this));
+        _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
+
+        _swap(amounts, amountFee, path, poolTypePath, feePath, address(this));
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
-    function swapETHForExactTokens(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, address to, uint deadline)
+    function swapETHForExactTokens(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         virtual
         override
@@ -986,24 +1040,24 @@ contract CoinFairRouter is ICoinFairRouter02 {
     {
         require(path[0] == WETH, 'CoinFairRouter: INVALID_PATH');
          uint[] memory amountFee;
-        (amounts, amountFee)= CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath);
+        (amounts, amountFee)= CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
         require(amounts[0] <= msg.value, 'CoinFairRouter: EXCESSIVE_INPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amounts[0]));
-        _swap(amounts, amountFee,path, poolTypePath, to);
+        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]));
+        _swap(amounts, amountFee,path, poolTypePath, feePath, to);
         // refund dust eth, if any
         if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);
     }
 
     // **** SWAP (supporting fee-on-transfer tokens) ****
     // requires the initial amount to have already been sent to the first pair
-    function _swapSupportingFeeOnTransferTokens(address[] memory path, uint8[] memory poolTypePath, address _to) internal virtual {
+    function _swapSupportingFeeOnTransferTokens(address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
-            (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = CoinFairLibrary.sortTokens(input, output);
-            ICoinFairPair pair = ICoinFairPair(CoinFairLibrary.pairFor(factory, input, output, poolTypePath[i]));
+            // (address input, address output) = (path[i], path[i + 1]);
+            (address token0,) = CoinFairLibrary.sortTokens(path[i], path[i + 1]);
+            ICoinFairPair pair = ICoinFairPair(CoinFairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]));
             
-            (uint amountOutput,uint amountFee) = _swapSupportingFeeOnTransferTokensAssist(pair, input, token0, pair.getFee());
+            (uint amountOutput,uint amountFee) = _swapSupportingFeeOnTransferTokensAssist(pair, path[i], token0, pair.getFee(), pair.getRoolOver());
             // { // scope to avoid stack too deep errors
             // (uint reserve0, uint reserve1,) = pair.getReserves();
             // (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
@@ -1015,12 +1069,12 @@ contract CoinFairRouter is ICoinFairRouter02 {
             // (amountOutput, amountFee) = CoinFairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB,pair.getFee());
             // }
             (uint amount0Out, uint amount1Out) = path[i] == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
-            address to = i < path.length - 2 ? CoinFairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1]) : _to;
+            address to = i < path.length - 2 ? CoinFairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
             pair.swap(amount0Out, amount1Out, amountFee , to, new bytes(0));
         }
     }
 
-    function _swapSupportingFeeOnTransferTokensAssist(ICoinFairPair pair, address input,address token0,uint fee) internal view returns(uint amountOutput,uint amountFee){
+    function _swapSupportingFeeOnTransferTokensAssist(ICoinFairPair pair, address input,address token0,uint fee, bool roolOver) internal view returns(uint amountOutput,uint amountFee){
         uint reserveInput;
         uint reserveOutput;
         uint256 exponentA;
@@ -1035,8 +1089,7 @@ contract CoinFairRouter is ICoinFairRouter02 {
             (exponentA, exponentB) = input == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
         }
         //(uint256 decimalsA, uint256 decimalsB) = (IERC20(input).decimals(), IERC20(output).decimals());
-        
-        (amountOutput, amountFee) = CoinFairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB,fee);
+        (amountOutput, amountFee) = CoinFairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB, fee, roolOver);
             
     }
 
@@ -1045,14 +1098,15 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     ) external virtual override ensure(deadline) {
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amountIn
+            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn
         );
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
-        _swapSupportingFeeOnTransferTokens(path, poolTypePath, to);
+        _swapSupportingFeeOnTransferTokens(path, poolTypePath, feePath, to);
         require(
             IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
             'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
@@ -1062,6 +1116,7 @@ contract CoinFairRouter is ICoinFairRouter02 {
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     )
@@ -1074,19 +1129,25 @@ contract CoinFairRouter is ICoinFairRouter02 {
         require(path[0] == WETH, 'CoinFairRouter: INVALID_PATH');
         uint amountIn = msg.value;
         IWETH(WETH).deposit{value: amountIn}();
-        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amountIn));
+        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn));
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
-        _swapSupportingFeeOnTransferTokens(path, poolTypePath, to);
+        _swapSupportingFeeOnTransferTokens(path, poolTypePath, feePath, to);
+        _swapExactETHForTokensSupportingFeeOnTransferTokensAssist(path, to, balanceBefore, amountOutMin);
+    }
+
+    function _swapExactETHForTokensSupportingFeeOnTransferTokensAssist(address[] memory path, address to, uint balanceBefore, uint amountOutMin) internal view{
         require(
             IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
             'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
+    
     function swapExactTokensForETHSupportingFeeOnTransferTokens(
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
         uint8[] calldata poolTypePath,
+        uint[] calldata feePath,
         address to,
         uint deadline
     )
@@ -1097,9 +1158,9 @@ contract CoinFairRouter is ICoinFairRouter02 {
     {
         require(path[path.length - 1] == WETH, 'CoinFairRouter: INVALID_PATH');
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0]), amountIn
+            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn
         );
-        _swapSupportingFeeOnTransferTokens(path, poolTypePath, address(this));
+        _swapSupportingFeeOnTransferTokens(path, poolTypePath, feePath, address(this));
         uint amountOut = IERC20(WETH).balanceOf(address(this));
         require(amountOut >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).withdraw(amountOut);
@@ -1111,43 +1172,43 @@ contract CoinFairRouter is ICoinFairRouter02 {
         return CoinFairLibrary.quote(amountA, reserveA, reserveB);
     }
 
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee)
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
         public
         view
         virtual
         override
         returns (uint amountOut,uint amountFee)
     {   
-        return CoinFairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee);
+        return CoinFairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
     }
 
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee)
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
         public
         view
         virtual
         override
         returns (uint amountIn,uint amountFee)
     {
-        return CoinFairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee);
+        return CoinFairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
     }
 
-    function getAmountsOut(uint amountIn, address[] memory path, uint8[] memory poolTypePath)
+    function getAmountsOut(uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
         public
         view
         virtual
         override
         returns (uint[] memory amounts,uint[] memory amountFees)
     {
-        return CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath);
+        return CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
     }
 
-    function getAmountsIn(uint amountOut, address[] memory path, uint8[] memory poolTypePath)
+    function getAmountsIn(uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
         public
         view
         virtual
         override
         returns (uint[] memory amounts,uint[] memory amountFees)
     {
-        return CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath);
+        return CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
     }
 }

@@ -3,10 +3,18 @@
 pragma solidity =0.5.16;
 
 
+library TransferHelper {
+    function safeApprove(address token, address to, uint value) internal {
+        // bytes4(keccak256(bytes('approve(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');
+    }
+}
+
 interface ICoinFairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
-    function getPair(address tokenA, address tokenB, uint8 poolType) external view returns (address pair);
+    function getPair(address tokenA, address tokenB, uint8 poolType, uint fee) external view returns (address pair);
     function allPairs(uint) external view returns (address pair);
     function allPairsLength() external view returns (uint);
 
@@ -15,7 +23,7 @@ interface ICoinFairFactory {
     function feeToSetter() external view returns (address);
     function setFeeToSetter(address) external;
 
-    function routerAddress() external view returns (address);
+    function hotRouterAddress() external view returns (address);
 
     function feeTo() external view returns (address);
 
@@ -38,10 +46,7 @@ interface ICoinFairPair {
     function transferFrom(address from, address to, uint value) external returns (bool);
 
     function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
     function nonces(address owner) external view returns (uint);
-
-    // function permit(address owner, address spender, uint val ue, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 
     event Mint(address indexed sender, uint amount0, uint amount1);
     event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
@@ -66,9 +71,11 @@ interface ICoinFairPair {
     function kLast() external view returns (uint);
     function getFee() external view returns (uint);
     function getPoolType() external view returns (uint8);
+    function getProjectCommunityAddress()external view returns (address);
+    function getRoolOver()external view returns (bool);
     function setIsPoolFeeOn(uint) external;
     function setRoolOver(bool) external;
-    function setDivideParam(uint, uint) external;
+    function setProjectCommunityAddress(address)external;
 
     function mint(address to) external returns (uint liquidity);
     function burn(address to) external returns (uint amount0, uint amount1);
@@ -95,10 +102,8 @@ interface ICoinFairERC20 {
     function transferFrom(address from, address to, uint value) external returns (bool);
 
     function DOMAIN_SEPARATOR() external view returns (bytes32);
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
     function nonces(address owner) external view returns (uint);
 
-    // function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
 
 // a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
@@ -127,8 +132,7 @@ contract CoinFairERC20 is ICoinFairERC20 {
     mapping(address => mapping(address => uint)) public allowance;
 
     bytes32 public DOMAIN_SEPARATOR;
-    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+
     mapping(address => uint) public nonces;
 
     event Approval(address indexed owner, address indexed spender, uint value);
@@ -190,20 +194,6 @@ contract CoinFairERC20 is ICoinFairERC20 {
         _transfer(from, to, value);
         return true;
     }
-
-    // function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
-    //     require(deadline >= block.timestamp, 'CoinFair: EXPIRED');
-    //     bytes32 digest = keccak256(
-    //         abi.encodePacked(
-    //             '\x19\x01',
-    //             DOMAIN_SEPARATOR,
-    //             keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-    //         )
-    //     );
-    //     address recoveredAddress = ecrecover(digest, v, r, s);
-    //     require(recoveredAddress != address(0) && recoveredAddress == owner, 'CoinFair: INVALID_SIGNATURE');
-    //     _approve(owner, spender, value);
-    // }
 }
 
 // a library for performing various math operations
@@ -264,9 +254,23 @@ interface ICoinFairCallee {
     function CoinFairCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
 }
 
-interface ICoinFairNFT {
-    function level(address) external view returns (uint256);
-    function getTwoParentAddress(address sonAddress) external view returns(address, address);
+interface ICoinFairV2Treasury {
+    event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
+    event WithdrawFee(address indexed token, address indexed owner, uint amount);
+
+    function collectFee(address token, address owner, uint amount, address pair) external;
+
+    function withdrawFee(address token) external;
+
+    function setRatio(uint newParentAddressRatio, uint newProjectCommunityAddressRatio) external;
+
+    function setProjectCommunityAddress(address pair, address newProjectCommunityAddress) external;
+
+    function setIsPoolFeeOn(address pair, uint newIsPoolFeeOn) external;
+
+    function setRoolOver(address pair, bool newRoolOver) external;
+
+    function getCoinFair()external view returns(address);
 }
 
 // Generally, token0 and token1 are ordered, and tokenA and tokenB are unordered
@@ -280,7 +284,8 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     address public factory;
     address public token0;
     address public token1;
-    address public CoinFairNFT = 0x70b304e75A467aa580148e4fA1a4f954dfC5748e;
+    address public CoinFairTreasury = 0x2cb748A6D5EDa10e1dA752E8725183C937a2dc07;
+    address public ProjectCommunityAddress;
     uint256 public exponent0;
     uint256 public exponent1;
 
@@ -294,8 +299,6 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     
     uint public fee;
     
-    uint public feeToParent = 300;
-    uint public feeToGrandParent = 100;
     uint8 public poolType;
     // default no liquidityfee
     uint public isPoolFeeOn;
@@ -314,20 +317,18 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     }
     
     function setIsPoolFeeOn(uint _isPoolFeeOn)public {
-        require(msg.sender == ICoinFairFactory(factory).feeTo(),'CoinFair : REFUSE');
+        require(msg.sender == CoinFairTreasury,'CoinFair : REFUSE');
         isPoolFeeOn = _isPoolFeeOn;
     }
 
     function setRoolOver(bool _roolOver)public {
-        require(msg.sender == ICoinFairFactory(factory).feeTo(),'CoinFair : REFUSE');
+        require(msg.sender == CoinFairTreasury,'CoinFair : REFUSE');
         roolOver = _roolOver;
     }
 
-    function setDivideParam(uint _feeToParent, uint _feeToGrandParent)public {
-        require(msg.sender == ICoinFairFactory(factory).feeTo(),'CoinFair : REFUSE');
-        require(_feeToParent.add(_feeToGrandParent) < 1000);
-        feeToParent = _feeToParent;
-        feeToGrandParent = _feeToGrandParent;
+    function setProjectCommunityAddress(address _projectCommunityAddress)public {
+        require(msg.sender == CoinFairTreasury,'CoinFair : REFUSE');
+        ProjectCommunityAddress = _projectCommunityAddress;
     }
 
     function getFee() public view returns (uint){
@@ -336,6 +337,14 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
     function getPoolType() public view returns (uint8){
         return poolType;
+    }
+
+    function getProjectCommunityAddress()public view returns (address){
+        return ProjectCommunityAddress;
+    }
+
+    function getRoolOver()public view returns (bool){
+        return roolOver;
     }
 
     function getReserves() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
@@ -374,7 +383,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1, uint256 _exponent0, uint256 _exponent1,uint _fee,uint8 _poolType) external {
         require(msg.sender == factory, 'CoinFair: FORBIDDEN'); // sufficient check
-        require(_fee == 3 || _fee == 5 || _fee == 10, "ERROR FEE");
+        require(_fee == 1 || _fee == 3 || _fee == 5 || _fee == 10, "ERROR FEE");
         require(_token0 != address(0) && _token1 != address(0));
         token0 = _token0;
         token1 = _token1;
@@ -632,7 +641,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint amount0Out, uint amount1Out, uint fee_ ,address to, bytes calldata data) external lock {
-        require(msg.sender == ICoinFairFactory(factory).routerAddress(), 'not router');
+        require(msg.sender == ICoinFairFactory(factory).hotRouterAddress(), 'not router');
         require(amount0Out > 0 || amount1Out > 0, 'CoinFair: INSUFFICIENT_OUTPUT_AMOUNT');
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         require(amount0Out < _reserve0 && amount1Out < _reserve1, 'CoinFair: INSUFFICIENT_LIQUIDITY');
@@ -655,49 +664,26 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         address _token0 = token0;
         address _token1 = token1;
         require(to != _token0 && to != _token1, 'CoinFair: INVALID_TO');
-        (address parentAddr, address grandParentAddr) = ICoinFairNFT(CoinFairNFT).getTwoParentAddress(msg.sender);
 
-        // pay fee
+        // pay fee to CoinFairTreasury
         if(exponent0 == 32 && exponent1 == 32 && roolOver){
-            if(feeToParent != 0 && parentAddr != address(0)){
-                exponent0 < exponent1 ?
-                    _safeTransfer(_token1, parentAddr, fee_ * 1000 * feeToParent / 1000000) :
-                    _safeTransfer(_token0, parentAddr, fee_ * 1000 * feeToParent / 1000000);
-            }
-
-            if(feeToGrandParent != 0 && grandParentAddr != address(0)){
-                exponent0 < exponent1 ?
-                    _safeTransfer(_token1, grandParentAddr, fee_ * 1000 * feeToGrandParent / 1000000) :
-                    _safeTransfer(_token0, grandParentAddr, fee_ * 1000 * feeToGrandParent / 1000000);
-            }
-
-            uint feeLeft = fee_.sub(fee_ * 1000 * feeToParent / 1000000).sub(fee_ * 1000 * feeToGrandParent / 1000000);
-            
-            if(feeLeft > 0 && ICoinFairFactory(factory).feeTo() != address(0)){
-                exponent0 < exponent1 ? 
-                    _safeTransfer(_token1, ICoinFairFactory(factory).feeTo(),feeLeft) :
-                    _safeTransfer(_token0, ICoinFairFactory(factory).feeTo(),feeLeft); 
-            }
+            if(exponent0 < exponent1)
+                {
+                    TransferHelper.safeApprove(_token1, CoinFairTreasury, fee_);
+                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
+                }else{
+                    TransferHelper.safeApprove(_token0, CoinFairTreasury, fee_);
+                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
+                }
         }else{
-            if(feeToParent != 0 && parentAddr != address(0)){
-                exponent0 < exponent1 ?
-                    _safeTransfer(_token0, parentAddr, fee_ * 1000 * feeToParent / 1000000) :
-                    _safeTransfer(_token1, parentAddr, fee_ * 1000 * feeToParent / 1000000);
-            }
-
-            if(feeToGrandParent != 0 && grandParentAddr != address(0)){
-                exponent0 < exponent1 ?
-                    _safeTransfer(_token0, grandParentAddr, fee_ * 1000 * feeToGrandParent / 1000000) :
-                    _safeTransfer(_token1, grandParentAddr, fee_ * 1000 * feeToGrandParent / 1000000);
-            }
-
-            uint feeLeft = fee_.sub(fee_ * 1000 * feeToParent / 1000000).sub(fee_ * 1000 * feeToGrandParent / 1000000);
-            
-            if(feeLeft > 0 && ICoinFairFactory(factory).feeTo() != address(0)){
-                exponent0 < exponent1 ? 
-                    _safeTransfer(_token0, ICoinFairFactory(factory).feeTo(),feeLeft) :
-                    _safeTransfer(_token1, ICoinFairFactory(factory).feeTo(),feeLeft); 
-            }
+            if(exponent0 < exponent1)
+                {
+                    TransferHelper.safeApprove(_token0, CoinFairTreasury, fee_);
+                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
+                }else{
+                    TransferHelper.safeApprove(_token1, CoinFairTreasury, fee_);
+                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
+                }
         }
 
         if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
@@ -727,11 +713,11 @@ contract CoinFairFactory is ICoinFairFactory {
     address public feeToSetter;
     address public feeTo;
     uint8 public feeToWeight;
-    address public routerAddress;
-
+    address public hotRouterAddress;
+    address public CoinFairTreasury = 0x2cb748A6D5EDa10e1dA752E8725183C937a2dc07;
     address public WETH;
 
-    mapping(address => mapping(address => mapping(uint8 => address))) public getPair;
+    mapping(address => mapping(address => mapping(uint8 => mapping(uint => address)))) public getPair;
     address[] public allPairs;
 
     event PairCreated(address indexed token0, address indexed token1, address pair, uint length, uint fee);
@@ -756,30 +742,29 @@ contract CoinFairFactory is ICoinFairFactory {
         require(token0 != address(0), 'CoinFair: ZERO_ADDRESS');
 
         uint8 poolType;
-        if(exponentA == 32 && exponentB == 32){poolType=1;}
+        if(exponentA == 32 && exponentB == 32){poolType = 1;}
         else if (exponentA == 32 && exponentB == 8){poolType = 2;}
         else if (exponentA == 8 && exponentB == 32){poolType = 3;}
         else if (exponentA == 32 && exponentB == 1){poolType = 4;}
         else if (exponentA == 1 && exponentB == 32){poolType = 5;}
-
-        require(getPair[token0][token1][poolType] == address(0), 'CoinFair: PAIR_EXISTS'); // single check is sufficient
+ 
+        require(getPair[token0][token1][poolType][fee] == address(0), 'CoinFair: PAIR_EXISTS'); // single check is sufficient
         bytes memory bytecode = type(CoinFairPair).creationCode;
 
-        bytes32 salt = keccak256(abi.encodePacked(token0, token1, poolType));
+        bytes32 salt = keccak256(abi.encodePacked(token0, token1, poolType, fee));
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
         
-        ICoinFairPair(pair).initialize(token0, token1, exponent0, exponent1,fee,poolType);
-        getPair[token0][token1][poolType] = pair;
-        getPair[token1][token0][poolType] = pair; // populate mapping in the reverse direction
+        ICoinFairPair(pair).initialize(token0, token1, exponent0, exponent1, fee, poolType);
+        getPair[token0][token1][poolType][fee] = pair;
+        getPair[token1][token0][poolType][fee] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
         emit PairCreated(token0, token1, pair, allPairs.length,fee);
     }
 
-
     function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
+        require(msg.sender == ICoinFairV2Treasury(CoinFairTreasury).getCoinFair(), 'CoinFair: FORBIDDEN');
         require(_feeToSetter != address(0));
         feeToSetter = _feeToSetter;
     }
@@ -796,34 +781,11 @@ contract CoinFairFactory is ICoinFairFactory {
         feeToWeight = _feeToWeight;
     }
 
-    function setRouterAddress(address _routerAddress) external {
+    function setHotRouterAddress(address _hotRouterAddress) external {
         require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
-        require(_routerAddress != address(0));
-        routerAddress = _routerAddress;
+        require(_hotRouterAddress != address(0));
+        hotRouterAddress = _hotRouterAddress;
     }
-
-    // There is no need to consider the order of tokenA and tokenB
-    function setIsPoolFeeOn(address tokenA, address tokenB, uint8 poolType, uint _isPoolFeeOn) external{
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
-        require(_isPoolFeeOn <= 1 && getPair[tokenA][tokenB][poolType] != address(0));
-        ICoinFairPair(getPair[tokenA][tokenB][poolType]).setIsPoolFeeOn(_isPoolFeeOn);
-    }
-
-    // There is no need to consider the order of tokenA and tokenB
-    function setRoolOver(address tokenA, address tokenB, bool _roolOver) external{
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
-        require(getPair[tokenA][tokenB][1] != address(0));
-        ICoinFairPair(getPair[tokenA][tokenB][1]).setRoolOver(_roolOver);
-    }
-    
-    // There is no need to consider the order of tokenA and tokenB
-    function setDivideParam(address tokenA, address tokenB, uint8 poolType, uint _feeToParent, uint _feeToGrandParent) external{
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
-        require(getPair[tokenA][tokenB][poolType] != address(0));
-        
-        ICoinFairPair(getPair[tokenA][tokenB][poolType]).setDivideParam(_feeToParent, _feeToGrandParent);
-    }
-
 }
 
 
