@@ -39,9 +39,9 @@ interface ICoinFairWarmRouter {
     function addLiquidity(
         address tokenA,
         address tokenB,
-        bytes calldata cmd,
         address to,
-        uint deadline)external returns (uint amountA, uint amountB, uint liquidity);
+        uint deadline,
+        bytes calldata cmd)external returns (uint amountA, uint amountB, uint liquidity);
     function addLiquidityETH(
         address token,
         bytes calldata cmd,
@@ -162,6 +162,8 @@ interface ICoinFairHotRouter{
     function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
+
+
 // File: contracts\interfaces\ICoinFairFactory.sol
 
 pragma solidity =0.6.6;
@@ -177,12 +179,18 @@ interface ICoinFairFactory {
 
     function feeToSetter() external view returns (address);
     function setFeeToSetter(address) external;
+    function setFeeTo(address) external;
+    function setFeeToWeight(uint8) external;
 
-    function routerAddress() external view returns (address);
+    function hotRouterAddress() external view returns (address);
 
     function feeTo() external view returns (address);
 
     function feeToWeight() external view returns (uint8);
+
+    function CoinFairTreasury() external view returns(address);
+    
+    function WETH()external view returns(address);
 }
 
 // File: contracts\libraries\SafeMath.sol
@@ -443,7 +451,7 @@ library CoinFairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'8744a0bbd57ad0638c2f2f0a72dccb8e2b9edb70aa7dd681a0045a6c7cf4f065' // init code hash
+                hex'8f1e29bc95b2267eb0e44cd1262fe2a18f03bb7d7e4f747730bd00fc0fff19a8' // init code hash
             ))));
     }
 
@@ -608,6 +616,23 @@ interface IWETH {
     function withdraw(uint) external;
 }
 
+interface ICoinFairV2Treasury {
+    event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
+    event WithdrawFee(address indexed token, address indexed owner, uint amount);
+
+    function collectFee(address token, address owner, uint amount, address pair) external;
+
+    function withdrawFee(address token) external;
+
+    function setRatio(uint, uint , uint) external;
+
+    function setProjectCommunityAddress(address pair, address newProjectCommunityAddress) external;
+
+    function setIsPoolFeeOn(address pair, uint newIsPoolFeeOn) external;
+
+    function setRoolOver(address pair, bool newRoolOver) external;
+}
+
 // File: contracts\CoinFairWarmRouter.sol
 
 pragma solidity =0.6.6;
@@ -673,7 +698,11 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         else if (exponentA == 1 && exponentB == 32){poolType = 5;}
         // create the pair if it doesn't exist yet
         if (ICoinFairFactory(factory).getPair(tokenA, tokenB, poolType, _fee) == address(0)) {
-             ICoinFairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,_fee);
+            ICoinFairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,_fee);
+            // Set the first address added liquidity to CommunityAddress
+            ICoinFairV2Treasury(ICoinFairFactory(factory).CoinFairTreasury()).setProjectCommunityAddress(
+                ICoinFairFactory(factory).getPair(tokenA, tokenB, poolType, _fee),
+                msg.sender);
         }
         (reserveA, reserveB) = CoinFairLibrary.getReserves(factory, tokenA, tokenB, poolType, _fee);
     }
@@ -681,11 +710,11 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
     function addLiquidity(
         address tokenA,
         address tokenB,
-        // cmd = abi.encode(uint amountADesired,uint amountBDesired,uint amountAMin,uint amountBMin,uint8 swapN,uint fee);
-        bytes calldata addLiquidityCmd,
         address to,
-        uint deadline) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
-            
+        uint deadline,
+        // cmd = abi.encode(uint amountADesired,uint amountBDesired,uint amountAMin,uint amountBMin,uint8 swapN,uint fee);
+        bytes calldata addLiquidityCmd) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
+
         uint8 poolType;
         uint fee;
         (amountA, amountB, poolType, fee) = _addLiquidityAssist(tokenA,tokenB,addLiquidityCmd);

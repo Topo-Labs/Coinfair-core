@@ -11,35 +11,23 @@
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "token0",
+				"name": "owner",
 				"type": "address"
 			},
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "token1",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "pair",
+				"name": "spender",
 				"type": "address"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "length",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "fee",
+				"name": "value",
 				"type": "uint256"
 			}
 		],
-		"name": "PairCreated",
+		"name": "Approval",
 		"type": "event"
 	},
 	{
@@ -48,50 +36,29 @@
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "token0",
+				"name": "from",
 				"type": "address"
 			},
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "token1",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "pair",
+				"name": "to",
 				"type": "address"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256",
-				"name": "",
+				"name": "value",
 				"type": "uint256"
 			}
 		],
-		"name": "PairCreated",
+		"name": "Transfer",
 		"type": "event"
 	},
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "CoinFairTreasury",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "INIT_CODE_PAIR_HASH",
+		"name": "DOMAIN_SEPARATOR",
 		"outputs": [
 			{
 				"internalType": "bytes32",
@@ -105,44 +72,19 @@
 	},
 	{
 		"constant": true,
-		"inputs": [],
-		"name": "WETH",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
 		"inputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "address",
 				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "allPairs",
-		"outputs": [
+				"type": "address"
+			},
 			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
 			}
 		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "allPairsLength",
+		"name": "allowance",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -159,36 +101,21 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "tokenA",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "tokenB",
+				"name": "spender",
 				"type": "address"
 			},
 			{
 				"internalType": "uint256",
-				"name": "exponentA",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "exponentB",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "fee",
+				"name": "value",
 				"type": "uint256"
 			}
 		],
-		"name": "createPair",
+		"name": "approve",
 		"outputs": [
 			{
-				"internalType": "address",
-				"name": "pair",
-				"type": "address"
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"payable": false,
@@ -197,13 +124,19 @@
 	},
 	{
 		"constant": true,
-		"inputs": [],
-		"name": "feeTo",
-		"outputs": [
+		"inputs": [
 			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -213,22 +146,7 @@
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "feeToSetter",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [],
-		"name": "feeToWeight",
+		"name": "decimals",
 		"outputs": [
 			{
 				"internalType": "uint8",
@@ -242,34 +160,34 @@
 	},
 	{
 		"constant": true,
+		"inputs": [],
+		"name": "name",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
 		"inputs": [
 			{
 				"internalType": "address",
 				"name": "",
 				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			},
+			}
+		],
+		"name": "nonces",
+		"outputs": [
 			{
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"name": "getPair",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
 			}
 		],
 		"payable": false,
@@ -279,12 +197,27 @@
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "hotRouterAddress",
+		"name": "symbol",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "string",
 				"name": "",
-				"type": "address"
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "totalSupply",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -296,12 +229,23 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_feeTo",
+				"name": "to",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
 			}
 		],
-		"name": "setFeeTo",
-		"outputs": [],
+		"name": "transfer",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -311,42 +255,28 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_feeToSetter",
+				"name": "from",
 				"type": "address"
-			}
-		],
-		"name": "setFeeToSetter",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"internalType": "uint8",
-				"name": "_feeToWeight",
-				"type": "uint8"
-			}
-		],
-		"name": "setFeeToWeight",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
+			},
 			{
 				"internalType": "address",
-				"name": "_hotRouterAddress",
+				"name": "to",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
 			}
 		],
-		"name": "setHotRouterAddress",
-		"outputs": [],
+		"name": "transferFrom",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"

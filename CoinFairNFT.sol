@@ -32,7 +32,7 @@ contract CoinFairNFT is ERC721, Ownable{
     event Claim(address indexed minter, address indexed claimer);
 
     modifier onlyCoinFair() {
-        require(CoinFairAddr == msg.sender,"CoinFairNFT:Only CoinFair");
+        require(msg.sender == CoinFairAddr,"CoinFairNFT:Only CoinFair");
         _;
     }
 

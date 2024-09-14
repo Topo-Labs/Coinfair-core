@@ -22,12 +22,18 @@ interface ICoinFairFactory {
 
     function feeToSetter() external view returns (address);
     function setFeeToSetter(address) external;
+    function setFeeTo(address) external;
+    function setFeeToWeight(uint8) external;
 
     function hotRouterAddress() external view returns (address);
 
     function feeTo() external view returns (address);
 
     function feeToWeight() external view returns (uint8);
+
+    function CoinFairTreasury() external view returns(address);
+    
+    function WETH()external view returns(address);
 }
 
 interface ICoinFairPair {
@@ -270,7 +276,6 @@ interface ICoinFairV2Treasury {
 
     function setRoolOver(address pair, bool newRoolOver) external;
 
-    function getCoinFair()external view returns(address);
 }
 
 // Generally, token0 and token1 are ordered, and tokenA and tokenB are unordered
@@ -284,7 +289,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     address public factory;
     address public token0;
     address public token1;
-    address public CoinFairTreasury = 0x2cb748A6D5EDa10e1dA752E8725183C937a2dc07;
+    address public CoinFairTreasury;
     address public ProjectCommunityAddress;
     uint256 public exponent0;
     uint256 public exponent1;
@@ -378,6 +383,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
     constructor() public {
         factory = msg.sender;
+        CoinFairTreasury = ICoinFairFactory(factory).CoinFairTreasury();
     }
 
     // called once by the factory at time of deployment
@@ -714,7 +720,7 @@ contract CoinFairFactory is ICoinFairFactory {
     address public feeTo;
     uint8 public feeToWeight;
     address public hotRouterAddress;
-    address public CoinFairTreasury = 0x2cb748A6D5EDa10e1dA752E8725183C937a2dc07;
+    address public CoinFairTreasury;
     address public WETH;
 
     mapping(address => mapping(address => mapping(uint8 => mapping(uint => address)))) public getPair;
@@ -723,12 +729,14 @@ contract CoinFairFactory is ICoinFairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint length, uint fee);
 
 
-    constructor() public {
+    constructor(address _coinFairTreasury) public {
         feeToSetter = msg.sender;
         feeTo = 0xEE89C7d5B07f163b613a7941eD4d1446FF0d6709;
         feeToWeight = 0;
 
         WETH = 0x4200000000000000000000000000000000000006;
+
+        CoinFairTreasury = _coinFairTreasury;
     }
 
     function allPairsLength() external view returns (uint) {
@@ -760,30 +768,42 @@ contract CoinFairFactory is ICoinFairFactory {
         getPair[token0][token1][poolType][fee] = pair;
         getPair[token1][token0][poolType][fee] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
+
         emit PairCreated(token0, token1, pair, allPairs.length,fee);
+
     }
 
     function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == ICoinFairV2Treasury(CoinFairTreasury).getCoinFair(), 'CoinFair: FORBIDDEN');
+        require(msg.sender == feeToSetter || 
+                msg.sender == CoinFairTreasury,
+                'CoinFair: FORBIDDEN');
         require(_feeToSetter != address(0));
+
         feeToSetter = _feeToSetter;
     }
 
     function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
+        require(msg.sender == feeToSetter || 
+                msg.sender == CoinFairTreasury,
+                'CoinFair: FORBIDDEN');
         require(_feeTo != address(0));
+
         feeTo = _feeTo;
     }
 
     function setFeeToWeight(uint8 _feeToWeight) external {
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
-        require(_feeToWeight <= 30, 'Weight is too big to set');
+        require(msg.sender == feeToSetter || 
+                msg.sender == CoinFairTreasury,
+                'CoinFair: FORBIDDEN');
+        require(_feeToWeight <= 30, 'CoinFair:Weight too big to set');
+
         feeToWeight = _feeToWeight;
     }
 
     function setHotRouterAddress(address _hotRouterAddress) external {
-        require(msg.sender == feeToSetter, 'CoinFair: FORBIDDEN');
+        require(msg.sender == feeToSetter,'CoinFair: FORBIDDEN');
         require(_hotRouterAddress != address(0));
+
         hotRouterAddress = _hotRouterAddress;
     }
 }
