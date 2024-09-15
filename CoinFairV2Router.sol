@@ -162,8 +162,6 @@ interface ICoinFairHotRouter{
     function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
-
-
 // File: contracts\interfaces\ICoinFairFactory.sol
 
 pragma solidity =0.6.6;
@@ -198,7 +196,6 @@ interface ICoinFairFactory {
 pragma solidity =0.6.6;
 
 // a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
-
 library SafeMath {
     function add(uint x, uint y) internal pure returns (uint z) {
         require((z = x + y) >= x, 'ds-math-add-overflow');
@@ -272,6 +269,7 @@ interface ICoinFairPair {
     function sync() external;
 
     function initialize(address, address, uint256, uint256,uint,uint8) external;
+    
 }
 
 pragma solidity =0.6.6;
@@ -435,8 +433,6 @@ library CoinFairLibrary {
         return n;
     }
 
-    
-
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
         require(tokenA != tokenB, 'CoinFairLibrary: IDENTICAL_ADDRESSES');
@@ -451,7 +447,7 @@ library CoinFairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'8f1e29bc95b2267eb0e44cd1262fe2a18f03bb7d7e4f747730bd00fc0fff19a8' // init code hash
+                hex'0787223ccd5e70d70ce35c5affd33a6fdfca5488fcbdf2c982afaa7c5734b24b' // init code hash
             ))));
     }
 
@@ -474,7 +470,7 @@ library CoinFairLibrary {
         (decimalsA, decimalsB) = (IERC20(tokenA).decimals(), IERC20(tokenB).decimals());
     }
 
-    // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+    // given some amount of an asset and pair reserves, returns the amount of the other asset
     function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
         require(amountA > 0, 'CoinFairLibrary: INSUFFICIENT_AMOUNT');
         require(reserveA > 0 && reserveB > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
