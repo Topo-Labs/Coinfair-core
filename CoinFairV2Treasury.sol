@@ -492,7 +492,8 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
         uint256 dischargedTime;
     }
 
-    uint[] public fees = [1, 3, 5, 10];
+    uint8[4] public fees = [1, 3, 5, 10];
+
 
     // CoinFairUsrTreasury[owner][token]
     mapping(address => mapping(address => uint256))public CoinFairUsrTreasury;
@@ -637,7 +638,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
     }
 
     // lock
-    // must approve pair to treasury
+    // must approve pair to treasury first
     function lockLP(address pair, uint256 amount, uint256 time)public {
         require(pair != address(0) && time > block.timestamp && amount > 0,'CoinFairTreasury:LOCK ERROR');
         LPPrison storage lpPrison = CoinFairLPPrison[msg.sender][pair];
@@ -671,21 +672,17 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
     }
 
     // return the best pool among multiple pools under a specific value
-    function getBestPool(address tokenA, address tokenB, uint amount, bool isExactTokensForTokens)public view returns(uint8 bestPoolType, uint bestfee, uint finalAmount){
-        for(uint8 swapN = 0;swapN < 5;swapN++){
+    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(uint8 bestPoolType, uint bestfee, uint finalAmount){
+        for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
-                uint fee = fees[i];
-
-                address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(tokenA, tokenB, swapN, fee);
+                address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                 if(pair == address(0)){continue;}
 
                 uint[] memory amountFee; uint[] memory amounts;
 
-                address[] memory path; path[0] = tokenA; path[1] = tokenB;
-
                 uint8[] memory poolTypePath; poolTypePath[0] = swapN;
 
-                uint[] memory feePath; feePath[0] = fee;
+                uint[] memory feePath; feePath[0] = fees[i];
 
                 if(isExactTokensForTokens){
                     (amounts , amountFee) = CoinFairLibrary.getAmountsOut(CoinFairFactoryAddress, amount, path, poolTypePath, feePath);
@@ -695,7 +692,26 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
                 if(amounts[0] > finalAmount){
                     finalAmount = amounts[0];
                     bestPoolType = swapN;
-                    bestfee = fee;
+                    bestfee = fees[i];
+                }
+            }
+        }
+    }
+
+    // return all pairs and balances belong to usr under the path
+    function getPairManagement(address[] memory path)public view returns(address[] memory pairs, uint256[] memory balances){
+        uint256 index;
+        for(uint8 swapN = 1;swapN < 5;swapN++){
+            for(uint i = 0;i < 4;i++){
+                address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
+                if(pair == address(0)){continue;}
+                else{
+                    uint256 usrBal = ICoinFairPair(pair).balanceOf(msg.sender);
+
+                    pairs[index] = pair;
+                    balances[index] = usrBal;
+
+                    index = index + 1;
                 }
             }
         }
