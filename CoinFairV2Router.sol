@@ -447,7 +447,7 @@ library CoinFairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'0787223ccd5e70d70ce35c5affd33a6fdfca5488fcbdf2c982afaa7c5734b24b' // init code hash
+                hex'ff8f15e60782a9cc2639de49efe3e1c7a91f88ede78990d5dadb899cc31d7f2c' // init code hash
             ))));
     }
 
@@ -729,7 +729,7 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
             _addLiquidityCmd = abi.encode(tokenA, tokenB, 32, 32, fee);
         }else if(swapN == 2){
             _addLiquidityCmd = abi.encode(tokenA, tokenB, 32, 8, fee);
-        }else if(swapN == 3){
+        }else if(swapN == 4){
             _addLiquidityCmd = abi.encode(tokenA, tokenB, 32, 1, fee);
         }else{
             revert();

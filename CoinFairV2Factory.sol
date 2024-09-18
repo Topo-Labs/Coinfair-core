@@ -388,8 +388,6 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'CoinFair: TRANSFER_FAILED');
     }
 
-
-
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1, uint256 _exponent0, uint256 _exponent1,uint _fee,uint8 _poolType) external {
         require(msg.sender == factory, 'CoinFair: FORBIDDEN'); // sufficient check

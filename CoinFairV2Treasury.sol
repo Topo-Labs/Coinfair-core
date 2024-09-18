@@ -1,5 +1,5 @@
 // Mozilla Public License 2.0
-
+pragma experimental ABIEncoderV2;
 pragma solidity =0.6.6;
 
 // helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
@@ -163,312 +163,9 @@ interface ICoinFairV2Treasury {
     function setRoolOver(address pair, bool newRoolOver) external;
 }
 
-library CoinFairLibrary {
-    using SafeMath for uint;
-
-    uint private constant pow128 = 2 ** 128;
-    uint private constant pow64 = 2 ** 64;
-
-    /**
-     * @dev Returns the square root of a number. If the number is not a perfect square, the value is rounded down.
-     *
-     * Inspired by Henry S. Warren, Jr.'s "Hacker's Delight" (Chapter 11).
-     */
-    function sqrt_new(uint256 a) internal pure returns (uint256) {
-        if (a == 0) {
-            return 0;
-        }
-
-        // For our first guess, we get the biggest power of 2 which is smaller than the square root of the target.
-        //
-        // We know that the "msb" (most significant bit) of our target number `a` is a power of 2 such that we have
-        // `msb(a) <= a < 2*msb(a)`. This value can be written `msb(a)=2**k` with `k=log2(a)`.
-        //
-        // This can be rewritten `2**log2(a) <= a < 2**(log2(a) + 1)`
-        // → `sqrt(2**k) <= sqrt(a) < sqrt(2**(k+1))`
-        // → `2**(k/2) <= sqrt(a) < 2**((k+1)/2) <= 2**(k/2 + 1)`
-        //
-        // Consequently, `2**(log2(a) / 2)` is a good first approximation of `sqrt(a)` with at least 1 correct bit.
-        uint256 result = 1 << (log_2(a) >> 1);
-
-        // At this point `result` is an estimation with one bit of precision. We know the true value is a uint128,
-        // since it is the square root of a uint256. Newton's method converges quadratically (precision doubles at
-        // every iteration). We thus need at most 7 iteration to turn our partial result with one bit of precision
-        // into the expected uint128 result.
-        //unchecked {
-            result = (result + a / result) >> 1;
-            result = (result + a / result) >> 1;
-            result = (result + a / result) >> 1;
-            result = (result + a / result) >> 1;
-            result = (result + a / result) >> 1;
-            result = (result + a / result) >> 1;
-            result = (result + a / result) >> 1;
-            return min(result, a / result);
-        //}
-    }
-
-    /**
-     * @dev Returns the smallest of two numbers.
-     */
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a < b ? a : b;
-    }
-    /**
-     * @dev Return the log in base 2, rounded down, of a positive value.
-     * Returns 0 if given 0.
-     */
-    function log_2(uint256 value) internal pure returns (uint256) {
-        uint256 result = 0;
-        //unchecked {
-            if (value >> 128 > 0) {
-                value >>= 128;
-                result += 128;
-            }
-            if (value >> 64 > 0) {
-                value >>= 64;
-                result += 64;
-            }
-            if (value >> 32 > 0) {
-                value >>= 32;
-                result += 32;
-            }
-            if (value >> 16 > 0) {
-                value >>= 16;
-                result += 16;
-            }
-            if (value >> 8 > 0) {
-                value >>= 8;
-                result += 8;
-            }
-            if (value >> 4 > 0) {
-                value >>= 4;
-                result += 4;
-            }
-            if (value >> 2 > 0) {
-                value >>= 2;
-                result += 2;
-            }
-            if (value >> 1 > 0) {
-                result += 1;
-            }
-        //}
-        return result;
-    }
-
-
-    function gcd(uint256 a, uint256 b) internal pure returns (uint256) {
-        while (b > 0) {
-            uint256 temp=b;
-            b = a%b;
-            a = temp;
-        }
-        return a;
-    }
-
-    // Calculate a/b power of n
-    function exp(uint256 n, uint256 a, uint256 b) public pure returns (uint256) {
-        if (a == b) {
-            return n;
-        }
-        uint256 g = gcd(a, b);
-        a = a/g;
-        b = b/g;
-        if(a==1 && b == 4){
-            return sqrt_new(sqrt_new( n * pow128) * pow64);
-        }
-
-        if(a ==4 && b ==1){
-             return n * n  / pow64 * n / pow64 * n / pow128;
-        }
-
-        if(a == 1 && b == 32){
-            return sqrt_new(sqrt_new(sqrt_new(sqrt_new(sqrt_new(n * pow128) * pow64) * pow64) * pow64) * pow64);
-        }
-
-        if(a == 32 && b == 1){
-            uint q = n * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            q = q * n / pow64;
-            return q * n / pow128;
-        }
-
-        return n;
-    }
-
-    // returns sorted token addresses, used to handle return values from pairs sorted in this order
-    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-        require(tokenA != tokenB, 'CoinFairLibrary: IDENTICAL_ADDRESSES');
-        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'CoinFairLibrary: ZERO_ADDRESS');
-    }
-
-    // calculates the CREATE2 address for a pair without making any external calls
-    function pairFor(address factory, address tokenA, address tokenB, uint8 poolType, uint fee) internal pure returns (address pair) {
-        (address token0, address token1) = sortTokens(tokenA, tokenB);
-        pair = address(uint(keccak256(abi.encodePacked(
-                hex'ff',
-                factory,
-                keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'8f1e29bc95b2267eb0e44cd1262fe2a18f03bb7d7e4f747730bd00fc0fff19a8' // init code hash
-            ))));
-    }
-
-    // fetches and sorts the reserves for a pair
-    function getReserves(address factory, address tokenA, address tokenB,uint8 poolType, uint fee) internal view returns (uint reserveA, uint reserveB) {
-        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
-        (uint reserve0, uint reserve1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getReserves();
-        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-    }
-
-    // fetches and sorts the exponents for a pair
-    function getExponents(address factory, address tokenA, address tokenB, uint8 poolType, uint fee) internal view returns (uint exponentA, uint exponentB) {
-        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
-        (uint256 exponent0, uint256 exponent1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getExponents();
-        (exponentA, exponentB) = tokenA == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
-    }
-
-    // fetches and sorts the exponents for a pair
-    function getDecimals(address tokenA, address tokenB) internal view returns (uint decimalsA, uint decimalsB) {
-        (decimalsA, decimalsB) = (IERC20(tokenA).decimals(), IERC20(tokenB).decimals());
-    }
-
-    // given some amount of an asset and pair reserves, returns the amount of the other asset
-    function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
-        require(amountA > 0, 'CoinFairLibrary: INSUFFICIENT_AMOUNT');
-        require(reserveA > 0 && reserveB > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
-        amountB = amountA.mul(reserveB) / reserveA;
-    }
-
-    // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    // Based on the K conservation formula, when the amountIn A token is entered, how many B tokens need to be returned after deducting the service charge, and the result is rounded down
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountOut, uint amountOutFee) {
-        require(amountIn > 0, 'CoinFairLibrary: INSUFFICIENT_INPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
-        if (exponentIn < exponentOut ||
-            (exponentIn == exponentOut && roolOver)){
-            // Round up the result of exp to make the output smaller
-            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-            uint256 amountInReal = amountIn.mul(uint256(1000).sub(fee))/1000;
-            // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
-            uint256 denominator = exp(reserveIn.add(amountInReal), exponentIn, 32); 
-            // Round up here to make the output smaller
-            uint256 tmp = K.add(denominator-1)/denominator; 
-            // Round up here to make the output smaller
-            tmp = exp(tmp, 32, exponentOut).add(1); 
-            amountOut = reserveOut.sub(tmp);
-            amountOutFee = amountIn.sub(amountInReal);
-        }else{
-            // Round up the result of exp to make the output smaller
-            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-            // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
-            uint256 denominator = exp(reserveIn.add(amountIn), exponentIn, 32); 
-            // Round up here to make the output smaller
-            uint256 tmp = K.add(denominator-1)/denominator; 
-            // Round up here to make the output smaller
-            tmp = exp(tmp, 32, exponentOut).add(1);
-            uint256 amountOutTotal = reserveOut.sub(tmp);
-            amountOut = amountOutTotal.mul(uint256(1000).sub(fee))/1000;
-            amountOutFee = amountOutTotal.sub(amountOut);
-        }
-        
-    }
-
-
-    // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    // Based on the K conservation formula, if you want to replace the amountOut B token, how many A tokens need to be input when the service charge is included, and the result is rounded up
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountIn, uint amountInFee) {
-        require(amountOut > 0, 'CoinFairLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
-        if (exponentIn < exponentOut ||
-            (exponentIn == exponentOut && roolOver)){
-            // Round up the result of exp to make the input larger
-            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-            // The exp result itself is rounded down, and the input becomes larger
-            uint256 denominator = exp(reserveOut.sub(amountOut), exponentOut, 32);
-            // The result is rounded up to make the input larger
-            uint256 tmp = K.add(denominator-1)/denominator;
-            // The result is rounded up to make the input larger
-            tmp = exp(tmp, 32, exponentIn).add(1);
-            tmp = tmp.sub(reserveIn);
-            // The result is rounded up to make the input larger
-            amountIn = tmp.mul(1000).add(uint256(999).sub(fee)) / (uint256(1000).sub(fee));
-            amountInFee = amountIn.sub(tmp);
-        }else{
-            // Round up the result of exp to make the input larger
-            uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-            uint amountOutTotal = amountOut.mul(uint256(1000).add(fee))/1000;
-            // The exp result itself is rounded down, and the input becomes larger
-            uint256 denominator = exp(reserveOut.sub(amountOutTotal), exponentOut, 32);
-            // The result is rounded up to make the input larger
-            uint256 tmp = K.add(denominator-1)/denominator;
-            // The result is rounded up to make the input larger
-            tmp = exp(tmp, 32, exponentIn).add(1);
-            amountIn = tmp.sub(reserveIn);
-            amountInFee = amountOutTotal.sub(amountOut);
-        }
-    }
-
-    // performs chained getAmountOut calculations on any number of pairs
-    function getAmountsOut(address factory, uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee){
-        require(path.length >= 2, 'CoinFairLibrary: INVALID_PATH');
-        require(path.length == poolTypePath.length + 1, 'CoinFair: INVALID_LENGTH');
-        amounts = new uint[](path.length);
-        amountsFee = new uint[](path.length - 1);
-        amounts[0] = amountIn;
-        for (uint i; i < path.length - 1; i++) {
-            require(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i]) != address(0), 'CoinFair:NO_PAIR');
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]);
-            (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]);
-            //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i], path[i + 1]);
-            // uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getFee();
-            bool roolOver = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getRoolOver();
-            (amounts[i + 1], amountsFee[i]) = getAmountOut(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i], roolOver);
-        }
-    }
-
-    // performs chained getAmountIn calculations on any number of pairs
-    function getAmountsIn(address factory, uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee) {
-        require(path.length >= 2, 'CoinFairLibrary: INVALID_PATH');
-        amounts = new uint[](path.length);
-        amountsFee = new uint[](path.length - 1);
-        amounts[amounts.length - 1] = amountOut;
-        for (uint i = path.length - 1; i > 0; i--) {
-            require(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1]) != address(0), 'CoinFair:NO_PAIR');
-            (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1]);
-            (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1]);
-            //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i - 1], path[i]);
-            // uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getFee();
-            bool roolOver = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getRoolOver();
-            (amounts[i - 1], amountsFee[i - 1]) = getAmountIn(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i - 1], roolOver);
-        }
-    }
+interface ICoinFairWarmRouter {
+    function getAmountsOut(uint amountIn, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
+    function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
 contract CoinFairV2Treasury is ICoinFairV2Treasury {
@@ -490,6 +187,11 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
         address pair;
         uint256 amount;
         uint256 dischargedTime;
+    }
+
+    struct usrPoolManagement{
+        address usrPair;
+        uint256 usrBal;
     }
 
     uint8[4] public fees = [1, 3, 5, 10];
@@ -535,7 +237,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
     // usually called by factory, 'approve' operate in factory and 'transfer' operate in treasury
     function collectFee(address token, address owner, uint amount, address pair)public override{
         require(token != address(0) && owner != address(0) && amount > 0 && pair != address(0),'CoinFairTreasury:COLLECTFEE ERROR');
-        require(msg.sender == CoinFairFactoryAddress,'CoinFairTreasury:NOT FACTORY');
+        // require(msg.sender == CoinFairFactoryAddress,'CoinFairTreasury:NOT FACTORY');
         (address parentAddress,) = ICoinFairNFT(CoinFairNFTAddress).getTwoParentAddress(owner);
         address protocolFeeToAddress = ICoinFairFactory(CoinFairFactoryAddress).feeTo();
         address projectCommunityAddress = ICoinFairPair(pair).getProjectCommunityAddress();
@@ -673,6 +375,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
     // return the best pool among multiple pools under a specific value
     function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(uint8 bestPoolType, uint bestfee, uint finalAmount){
+        require(path.length > 1);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
                 address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
@@ -680,27 +383,35 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
                 uint[] memory amountFee; uint[] memory amounts;
 
-                uint8[] memory poolTypePath; poolTypePath[0] = swapN;
+                uint8[] memory poolTypePath = new uint8[](1); poolTypePath[0] = swapN;
 
-                uint[] memory feePath; feePath[0] = fees[i];
+                uint[] memory feePath = new uint[](1); feePath[0] = fees[i];
 
                 if(isExactTokensForTokens){
-                    (amounts , amountFee) = CoinFairLibrary.getAmountsOut(CoinFairFactoryAddress, amount, path, poolTypePath, feePath);
+                    (amounts , amountFee) = ICoinFairWarmRouter(CoinFairWarmRouterAddress).getAmountsOut(amount, path, poolTypePath, feePath);
+                    if(amounts[1] > finalAmount){
+                        finalAmount = amounts[1];
+                        bestPoolType = swapN;
+                        bestfee = fees[i];
+                    }
                 }else{
-                    (amounts , amountFee) = CoinFairLibrary.getAmountsIn(CoinFairFactoryAddress, amount, path, poolTypePath, feePath);
+                    (amounts , amountFee) = ICoinFairWarmRouter(CoinFairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
+                    if(amounts[0] > finalAmount){
+                        finalAmount = amounts[0];
+                        bestPoolType = swapN;
+                        bestfee = fees[i];
+                    }
                 }
-                if(amounts[0] > finalAmount){
-                    finalAmount = amounts[0];
-                    bestPoolType = swapN;
-                    bestfee = fees[i];
-                }
+
             }
         }
     }
 
     // return all pairs and balances belong to usr under the path
-    function getPairManagement(address[] memory path)public view returns(address[] memory pairs, uint256[] memory balances){
+    // function getPairManagement(address[] memory path)public view returns(address[] memory pairs, uint256[] memory balances){
+    function getPairManagement(address[] memory path)public view returns(usrPoolManagement[] memory UsrPoolManagement){
         uint256 index;
+        UsrPoolManagement = new usrPoolManagement[](20);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
                 address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
@@ -708,8 +419,8 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
                 else{
                     uint256 usrBal = ICoinFairPair(pair).balanceOf(msg.sender);
 
-                    pairs[index] = pair;
-                    balances[index] = usrBal;
+                    UsrPoolManagement[index].usrPair = pair;
+                    UsrPoolManagement[index].usrBal = usrBal;
 
                     index = index + 1;
                 }

@@ -348,14 +348,21 @@
 		"name": "getPairManagement",
 		"outputs": [
 			{
-				"internalType": "address[]",
-				"name": "pairs",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "balances",
-				"type": "uint256[]"
+				"components": [
+					{
+						"internalType": "address",
+						"name": "usrPair",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "usrBal",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct CoinFairV2Treasury.usrPoolManagement[]",
+				"name": "UsrPoolManagement",
+				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
