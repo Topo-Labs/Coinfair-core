@@ -1,0 +1,3 @@
+[submodule "CoinFair25foundry/CoinFair-v2.5-core-foundry/lib/forge-std"]
+	path = CoinFair25foundry/CoinFair-v2.5-core-foundry/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
