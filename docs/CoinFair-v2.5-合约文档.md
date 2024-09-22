@@ -3,29 +3,29 @@
 ## 最新合约地址&abi
 
 - CoinFairHotRouter：
-  - 0xA1873D38dEB5a8B3B33e6D91D97592BD6d5B3A32
+  - 0x352bDF75Fe95a55E656e13B5e65ac3aaB0E7fe74
 
 - CoinFairWarmRouter：
-  - 0x3041e2dBcfa6686f86B6D182b6567AB96C47B691
+  - 0xCfC0f0708e9d70cF463c27C21a908F84Ba050645
 
 - Factory：
-  - 0x45168c6CA756a1E446E392f1f4F235F8040fD768
+  - 0x009629D7aC2092EEcb79BA0177b03Dd512D167E4
 
 - Initcode：
   - 0xff8f15e60782a9cc2639de49efe3e1c7a91f88ede78990d5dadb899cc31d7f2c
 
 - CoinFairTreasury：
-  - 0x39FCEf60FF10cae394d943d80E8b22e6f61762E8
+  - 0xeb6EE05af956C28aF04E454e7c54fE4cF16A3492
 
 - CoinFairNFT：
-  - 0x4a7046F48FbE2E75e189B126C2ac34a73e8085b1
+  - 0x051B7a6cFc34e4f7b74663bdF3dD2c53dCC8237a
 
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-19 5:00
+更新时间：9-22 17:00
 
 
 
@@ -122,6 +122,7 @@ path长度比poolTypePath和feePath长1
   - input
 
     - `address[] memory path`：`[tokenA, tokenB]`，只能两个代币
+    - `address usrAddr`:  用户地址
 
   - output：
 
@@ -263,11 +264,11 @@ path长度比poolTypePath和feePath长1
 
   - input：
 
-    - `tokenA`：tokenA地址
+    - `address tokenA`：tokenA地址
 
-    - `tokenB`：tokenB地址（和tokenA地址不分先后顺序）
+    - `address tokenB`：tokenB地址（和tokenA地址不分先后顺序）
 
-    - `poolType`：池子类型，expoentA和exponentB和poolType强相关。一般来说，poolType为1/2/3/4/5，1对应ESIII，2/3对应ESI，4/5对应ESII
+    - `uint8 poolType`：池子类型，expoentA和exponentB和poolType强相关。一般来说，poolType为1/2/3/4/5，1对应ESIII，2/3对应ESI，4/5对应ESII
 
       ```solidity
               if(exponentA == 32 && exponentB == 32){poolType = 1;}
@@ -277,7 +278,7 @@ path长度比poolTypePath和feePath长1
               else if (exponentA == 1 && exponentB == 32){poolType = 5;}
       ```
 
-    - `fee`：手续费类型，1/3/5/10
+    - `uint fee`：手续费类型，1/3/5/10
 
 
 
