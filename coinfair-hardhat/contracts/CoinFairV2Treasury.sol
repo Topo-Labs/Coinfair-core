@@ -409,22 +409,27 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
     // return all pairs and balances belong to usr under the path
     // function getPairManagement(address[] memory path)public view returns(address[] memory pairs, uint256[] memory balances){
-    function getPairManagement(address[] memory path, address usrAddr)public view returns(usrPoolManagement[] memory UsrPoolManagement){
+    function getPairManagement(address[] memory path, address usrAddr)public view returns(usrPoolManagement[] memory UsrPoolManagement_){
         uint256 index;
-        UsrPoolManagement = new usrPoolManagement[](20);
+        usrPoolManagement[] memory UsrPoolManagement = new usrPoolManagement[](20);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
                 address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                 if(pair == address(0)){continue;}
                 else{
                     uint256 usrBal = ICoinFairPair(pair).balanceOf(usrAddr);
+                    if(usrBal != 0){
+                        UsrPoolManagement[index].usrPair = pair;
+                        UsrPoolManagement[index].usrBal = usrBal;
 
-                    UsrPoolManagement[index].usrPair = pair;
-                    UsrPoolManagement[index].usrBal = usrBal;
-
-                    index = index + 1;
+                        index = index + 1;
+                    }
                 }
             }
+        }
+        UsrPoolManagement_ = new usrPoolManagement[](index);
+        for(uint j = 0;j < index;j++){
+            UsrPoolManagement_[j] = UsrPoolManagement[j];
         }
     }
 }

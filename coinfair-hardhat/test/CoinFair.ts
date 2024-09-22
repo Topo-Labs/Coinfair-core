@@ -54,13 +54,13 @@ describe("Coinfair", function () {
     }
 
     async function addLiquidity(warm:any, factory:any, usr:any, token0:any, token1:any, amount0:any, amount1:any, poolType:any, fee:any){
-        console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
+        console.log("\n===== ===== ===== ===== addLiquidity ===== ===== ===== =====\n")
         const addLiquidityTypes = ["uint256", "uint256", "uint256", "uint256", "uint8", "uint256"];
         const addLiquidityvalues = [amount0, amount1, 1, 1, poolType, fee];
         const addLiquidityEncode = hre.ethers.AbiCoder.defaultAbiCoder().encode(addLiquidityTypes, addLiquidityvalues);
         const usrBalBefore1 = await token0.balanceOf(usr[0]);
         const usrBalBefore2 = await token1.balanceOf(usr[0]);
-        const pairBefore = await factory.getPair(token0, token1, 2, 5);
+        const pairBefore = await factory.getPair(token0, token1, poolType, fee);
 
         expect(pairBefore).to.equal(zeroAddress);
 
@@ -70,7 +70,7 @@ describe("Coinfair", function () {
         console.log("addLiquidity transfered ",await token0.name(),":",(usrBalBefore1 - usrBalAfter1));
         console.log("addLiquidity transfered ",await token1.name(),":",(usrBalBefore2 - usrBalAfter2));
 
-        const pairAfter = await factory.getPair(token0, token1, 2, 5);
+        const pairAfter = await factory.getPair(token0, token1, poolType, fee);
         console.log("pair: ",pairAfter);
         expect(pairAfter).to.not.equal(zeroAddress);
         
@@ -80,16 +80,16 @@ describe("Coinfair", function () {
         expect(await token0.balanceOf(pairAfter)).to.equal(usrBalBefore1 - usrBalAfter1);
         expect(await token1.balanceOf(pairAfter)).to.equal(usrBalBefore2 - usrBalAfter2);
         console.log("total liquidityAmount", liquidityAmount);
-        console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n");
+        console.log("\n===== ===== ===== ===== addLiquidity ===== ===== ===== =====\n");
 
         return liquidityAmount;
     }
 
     async function removeLiquidity(warm:any, factory:any, usr:any, token0:any, token1:any, liqAmount:any, poolType:any, fee:any){
-        console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
+        console.log("\n===== ===== ===== ===== removeLiquidity ===== ===== ===== =====\n")
         const usrBalBefore1 = await token0.balanceOf(usr[0]);
         const usrBalBefore2 = await token1.balanceOf(usr[0]);
-        const pair = await factory.getPair(token0, token1, 2, 5);
+        const pair = await factory.getPair(token0, token1, poolType, fee);
 
         console.log("pair: ",pair);
         expect(pair).to.not.equal(zeroAddress);
@@ -102,7 +102,39 @@ describe("Coinfair", function () {
         console.log("removeLiquidity transfered: ",await token0.name(),":",(usrBalBefore1 - usrBalAfter1));
         console.log("removeLiquidity transfered: ",await token1.name(),":",(usrBalBefore2 - usrBalAfter2));
         console.log("liquidity after remove: ", await pairContract.balanceOf(usr[0]));
-        console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
+        console.log("\n===== ===== ===== ===== removeLiquidity ===== ===== ===== =====\n")
+    }
+
+    async function swap(hot:any, factory:any, usr:any, amountIn:any, token:any, poolType:any, fee:any){
+        console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
+
+        const usrBalBefore1 = await token[0].balanceOf(usr[0]);
+        const usrBalBefore2 = await token[token.length-1].balanceOf(usr[0]);
+        const pair = await factory.getPair(token[0].target, token[token.length-1].target, poolType[0], fee[0]);
+
+        console.log("pair: ",pair);
+        expect(pair).to.not.equal(zeroAddress);
+
+        const swapReceipt = await(await hot.swapExactTokensForTokens(amountIn, 1, token, poolType, fee, usr[0], 999999999999)).wait()
+
+        const usrBalAfter1 = await token[0].balanceOf(usr[0]);
+        const usrBalAfter2 = await token[token.length-1].balanceOf(usr[0]);
+        const pairContract = await hre.ethers.getContractAt("CoinFairPair", pair);
+
+        const {_reserve0, _reserve1,} = await pairContract.getReserves();
+        const {_exponent0, _exponent1,} = await pairContract.getExponents()
+
+        const XperY = (_reserve1*BigInt(_exponent0))/(_reserve1*BigInt(_exponent1));
+
+        console.log("Price now:",XperY,await token[0].name(), "= 1",  await token[token.length-1].name());
+
+        console.log("swap transfered: ",await token[0].name(),":",(usrBalBefore1 - usrBalAfter1));
+        console.log("swap transfered: ",await token[token.length-1].name(),":",(usrBalBefore2 - usrBalAfter2));
+        console.log("(Notice: - pool -> usr & + usr -> pool)\n");
+        console.log("Tracking fee income")
+        // TODO
+        console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
+
     }
 
     describe("CoinFair", function () {
@@ -145,6 +177,35 @@ describe("Coinfair", function () {
                 2,
                 5
             );
+
+            await addLiquidity(
+                warm,
+                factory,
+                usr,
+                cf,
+                usdt,
+                160000000000000000000000000n,
+                10000000000000000000000000n,
+                4,
+                10
+            );
+
+            const poolManagement = await treasury.getPairManagement(
+                [cf.target,usdt.target],
+                usr[0]
+            )
+
+            console.log("poolManagement",poolManagement);
+
+            await swap(
+                hot,
+                factory,
+                usr,
+                1000000000000000000n,
+                [cf, usdt],
+                [2],
+                [5]
+            )
 
             await removeLiquidity(
                 warm,
