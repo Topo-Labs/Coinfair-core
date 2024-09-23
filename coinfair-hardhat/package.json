@@ -5,5 +5,8 @@
     "@openzeppelin/contracts": "^5.0.2",
     "hardhat": "^2.22.11",
     "hardhat-tracer": "^3.1.0"
+  },
+  "dependencies": {
+    "decimal.js": "^10.4.3"
   }
 }

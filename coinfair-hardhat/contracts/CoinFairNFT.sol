@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract CoinFairNFT is ERC721, Ownable{
     using Address for address payable;
 
-    mapping(address => address) internal parentAddress;
+    mapping(address => address) public parentAddress;
 
     mapping(address => uint256) public level; 
 
