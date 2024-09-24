@@ -447,7 +447,7 @@ library CoinFairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'3c7a425749dd74ec3c0591580804465484bac00fa8bf4a3992b0f1d2288b5cf2' // init code hash
+                hex'5883e9d66cb2c5b7ea370a467210d7da36a5febae1d3b70dabb172e22c38ec99' // init code hash
             ))));
     }
 
@@ -470,7 +470,7 @@ library CoinFairLibrary {
         (decimalsA, decimalsB) = (IERC20(tokenA).decimals(), IERC20(tokenB).decimals());
     }
 
-    // given some amount of an asset and pair reserves, returns the amount of the other asset
+    // given some amount of an asset and pair reserves, returns the amount of another asset
     function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
         require(amountA > 0, 'CoinFairLibrary: INSUFFICIENT_AMOUNT');
         require(reserveA > 0 && reserveB > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
@@ -977,7 +977,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         );
     }
 
-    function swapTokensForExactTokens(
+    function swapTokensForExactTokens( 
         uint amountOut,
         uint amountInMax,
         address[] calldata path,

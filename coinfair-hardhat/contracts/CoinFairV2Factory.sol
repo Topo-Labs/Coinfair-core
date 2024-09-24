@@ -2,7 +2,6 @@
 // Mozilla Public License 2.0
 pragma solidity =0.5.16;
 
-
 library TransferHelper {
     function safeApprove(address token, address to, uint value) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
@@ -402,14 +401,14 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     }
 
     // update reserves and, on the first call per block, price accumulators
-    function _update(uint balance0, uint balance1, uint112 _reserve0, uint112 _reserve1) private {
+    function _update(uint balance0, uint balance1, uint112 _reserve0, uint112 _reserve1, uint256 _exponent0, uint256 _exponent1) private {
         require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'CoinFair: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
             // * never overflows, and + overflow is desired
-            price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed;
-            price1CumulativeLast += uint(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed;
+            price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed * _exponent0 / _exponent1;
+            price1CumulativeLast += uint(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed * _exponent1 / _exponent0;
         }
         reserve0 = uint112(balance0);
         reserve1 = uint112(balance1);
@@ -464,7 +463,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         require(liquidity > 0, 'CoinFair: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
 
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(balance0, balance1, _reserve0, _reserve1, exponent0, exponent1);
         if (feeOn) kLast = uint(exp(reserve0, exponent0, 32)).mul(exp(reserve1, exponent1, 32));  // reserve0 and reserve1 are up-to-date
         emit Mint(msg.sender, amount0, amount1);
     }
@@ -490,7 +489,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         balance0 = IERC20(_token0).balanceOf(address(this));
         balance1 = IERC20(_token1).balanceOf(address(this));
 
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(balance0, balance1, _reserve0, _reserve1, exponent0, exponent1);
         if (feeOn) kLast = uint(exp(reserve0, exponent0, 32)).mul(exp(reserve1, exponent1, 32)); // reserve0 and reserve1 are up-to-date
         emit Burn(msg.sender, amount0, amount1, to);
     }
@@ -664,7 +663,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         require(exp(balance0, exponent0, 32).mul(exp(balance1, exponent1, 32)) >= 
             exp(_reserve0, exponent0, 32).mul(exp(_reserve1, exponent1, 32)), 'CoinFair: K');
         }
-        _update(balance0, balance1, _reserve0, _reserve1);
+        _update(balance0, balance1, _reserve0, _reserve1, exponent0, exponent1);
         emit Swap(msg.sender, balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0, balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0, amount0Out, amount1Out, to);
     }
 
@@ -675,23 +674,11 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
         // pay fee to CoinFairTreasury
         if(exponent0 == 32 && exponent1 == 32 && roolOver){
-            if(exponent0 < exponent1)
-                {
-                    TransferHelper.safeApprove(_token1, CoinFairTreasury, fee_);
-                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
-                }else{
-                    TransferHelper.safeApprove(_token0, CoinFairTreasury, fee_);
-                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
-                }
+            TransferHelper.safeApprove(_token0, CoinFairTreasury, fee_);
+            ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token0, to, fee_, address(this));
         }else{
-            if(exponent0 < exponent1)
-                {
-                    TransferHelper.safeApprove(_token0, CoinFairTreasury, fee_);
-                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
-                }else{
-                    TransferHelper.safeApprove(_token1, CoinFairTreasury, fee_);
-                    ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
-                }
+            TransferHelper.safeApprove(_token1, CoinFairTreasury, fee_);
+            ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
         }
 
         if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
@@ -711,7 +698,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
     // force reserves to match balances
     function sync() external lock {
-        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
+        _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1, exponent0, exponent1);
     }
 }
 

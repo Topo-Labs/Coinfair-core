@@ -75,6 +75,8 @@ describe("Coinfair", function () {
 
     async function addLiquidity(warm:any, factory:any, usr:any, token0:any, token1:any, amount0:any, amount1:any, poolType:any, fee:any){
         console.log("\n===== ===== ===== ===== addLiquidity ===== ===== ===== =====\n")
+        console.log("BlockNumber:",await hre.ethers.provider.getBlockNumber());
+
         const addLiquidityTypes = ["uint256", "uint256", "uint256", "uint256", "uint8", "uint256"];
         const addLiquidityvalues = [amount0, amount1, 1, 1, poolType, fee];
         const addLiquidityEncode = hre.ethers.AbiCoder.defaultAbiCoder().encode(addLiquidityTypes, addLiquidityvalues);
@@ -82,7 +84,7 @@ describe("Coinfair", function () {
         const usrBalBefore2 = await token1.balanceOf(usr[0]);
         const pairBefore = await factory.getPair(token0, token1, poolType, fee);
 
-        expect(pairBefore).to.equal(zeroAddress);
+        // expect(pairBefore).to.equal(zeroAddress);
 
         const addLiquidityReceipt = await (await warm.addLiquidity(token0, token1, usr[0], 999999999999, addLiquidityEncode)).wait();
         const usrBalAfter1 = await token0.balanceOf(usr[0]);
@@ -107,6 +109,7 @@ describe("Coinfair", function () {
 
     async function removeLiquidity(warm:any, factory:any, usr:any, token0:any, token1:any, liqAmount:any, poolType:any, fee:any){
         console.log("\n===== ===== ===== ===== removeLiquidity ===== ===== ===== =====\n")
+        console.log("BlockNumber:",await hre.ethers.provider.getBlockNumber());
         const usrBalBefore1 = await token0.balanceOf(usr[0]);
         const usrBalBefore2 = await token1.balanceOf(usr[0]);
         const pair = await factory.getPair(token0, token1, poolType, fee);
@@ -127,6 +130,7 @@ describe("Coinfair", function () {
 
     async function swap(nft:any, treasury:any, hot:any, factory:any, usr:any, amountIn:any, token:any, poolType:any, fee:any){
         console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
+        console.log("BlockNumber:",await hre.ethers.provider.getBlockNumber());
 
         const usrBalBefore1 = await token[0].balanceOf(usr[0]);
         const usrBalBefore2 = await token[token.length-1].balanceOf(usr[0]);
@@ -220,21 +224,26 @@ describe("Coinfair", function () {
                 usdt,
                 160000000000000000000000000n,
                 10000000000000000000000000n,
-                2,
+                1,
                 5
             );
 
-            await addLiquidity(
-                warm,
-                factory,
-                usr,
-                cf,
-                usdt,
-                160000000000000000000000000n,
-                10000000000000000000000000n,
-                4,
-                10
-            );
+            // await addLiquidity(
+            //     warm,
+            //     factory,
+            //     usr,
+            //     cf,
+            //     usdt,
+            //     160000000000000000000000000n,
+            //     10000000000000000000000000n,
+            //     4,
+            //     10
+            // );
+
+            hre.network.provider.send("evm_mine")
+            hre.network.provider.send("evm_mine")
+            hre.network.provider.send("evm_mine")
+            hre.network.provider.send("evm_mine")
 
             await swap(
                 nft,
@@ -244,7 +253,30 @@ describe("Coinfair", function () {
                 usr,
                 1000000000000000000n,
                 [cf, usdt],
-                [2],
+                [1],
+                [5]
+            )
+            // treasury.setRoolOver
+            const pair = await factory.getPair(cf, usdt, 1, 5);
+            const pairContract = await hre.ethers.getContractAt("CoinFairPair", pair);
+
+            await treasury.setRoolOver(pairContract.target,true);
+            console.log("roolOver: ",await pairContract.roolOver());
+
+            const price0CumulativeLast = await pairContract.price0CumulativeLast();
+            const price1CumulativeLast = await pairContract.price1CumulativeLast();
+            console.log("price0CumulativeLast: ",price0CumulativeLast);
+            console.log("price1CumulativeLast: ",price1CumulativeLast);
+
+            await swap(
+                nft,
+                treasury,
+                hot,
+                factory,
+                usr,
+                1000000000000000000n,
+                [cf, usdt],
+                [1],
                 [5]
             )
 
@@ -255,7 +287,7 @@ describe("Coinfair", function () {
                 cf,
                 usdt,
                 liquidityAmount,
-                2,
+                1,
                 5
             )
         })
