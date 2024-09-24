@@ -84,7 +84,7 @@
 
     - 测试讨论
     - 终审v2解决程度：**Acknowledged**
-    - 最新解决方案：已添加hardhat测试代码，对合约中主要功能进行了测试。在`coinfair-hardhat`目录下运行`npx hardhat test`即可运行测试内容，并在docs文件夹下添加了合约文档（本文档），用于说明本次更新和上次更新的主要不同。（代码已做修改）
+    - 最新解决方案：已添加hardhat测试代码，对合约中主要功能进行了测试。在`coinfair-hardhat`目录下运行`npx hardhat test`即可运行测试内容，并在docs文件夹下添加了合约文档，用于说明本次更新和上次更新的主要不同。（代码已做修改）
 
 - Partially Resolved
 

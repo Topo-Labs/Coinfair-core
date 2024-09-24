@@ -197,7 +197,7 @@ describe("Coinfair", function () {
           console.log("nftAddress:         ",nft.target);
           console.log("treasuryAddress:    ",treasury.target);
           console.log("factoryAddress:     ",factory.target);
-          console.log("factoryInitCode:    ",await factory.INIT_CODE_PAIR_HASH());
+          console.log("InitCode:           ",await factory.INIT_CODE_PAIR_HASH());
           console.log("hot:                ",hot.target);
           console.log("warm:               ",warm.target);
           console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
