@@ -3,29 +3,29 @@
 ## 最新合约地址&abi
 
 - CoinFairHotRouter：
-  - 0xE2D17b6F9B3Ad3c3E45c8948353d2093A7bAA059
+  - 0x5CFF1837978F962eF3beC6B666650fb26D1DB179
 
 - CoinFairWarmRouter：
-  - 0xb533fDe269e64D0C3e06211ac7BeDeFAd01E64E6
+  - 0xd5A318354EafB96103D74B0B8577a2C18532bd05
 
 - Factory：
-  - 0xb229E3026eE90C3AFC07ce418392244fBcCcfb6A
+  - 0x5A5aeDBA5b459703bb6Fbb4AB3864590af7a3FAA
 
 - Initcode：
-  - 0xe926172bbeaf728f971d4ac518828df3e6f99af1d7e1f571c0ab18270ae16d28
+  - 0xc2a43bb225edb416ed87ef24c79f1d7e61a99837edc8428668a94edf0b625acd
 
 - CoinFairTreasury：
-  - 0x6CDe00FA36edf0D051BfEE7a0Dde519047C70C1f
+  - 0x2F5aD3465C4BC598Cb41d57C0c1E1D8fDEF26CCB
 
 - CoinFairNFT：
-  - 0x7684f094CDCF13Ad72D9252D6779487e5f0dFC3e
+  - 0xCb4Fce1cD3Cfb35a8842d8E84A35f56348F73AE3
 
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-25 5:00
+更新时间：9-25 23:00
 
 
 
@@ -129,10 +129,18 @@ path长度比poolTypePath和feePath长1
     - `usrPoolManagement[] memory UsrPoolManagement`：用户所有的流动性
 
   - ```solidity
-        // 输出的结构体，用户的一组流动性数据由pair和lptoken数量组成
+        // 输出的结构体，用户的一组流动性数据由以下组成
         struct usrPoolManagement{
         		// pair的地址
             address usrPair;
+            // 此pair的池子类型
+            uint8 poolType;
+            // 此pair的手续费
+            uint fee;
+            // reserve0
+            uint reserve0;
+            // reserve1
+            uint reserve1;
             // 用户持有的lp代币数量
             uint256 usrBal;
         }

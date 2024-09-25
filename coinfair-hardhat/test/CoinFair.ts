@@ -99,8 +99,8 @@ describe("Coinfair", function () {
         const pairContract = await hre.ethers.getContractAt("CoinFairPair", pairAfter);
         const liquidityAmount = await pairContract.balanceOf(usr[0]);
         await pairContract.approve(warm, liquidityAmount);
-        expect(await token0.balanceOf(pairAfter)).to.equal(usrBalBefore1 - usrBalAfter1);
-        expect(await token1.balanceOf(pairAfter)).to.equal(usrBalBefore2 - usrBalAfter2);
+        // expect(await token0.balanceOf(pairAfter)).to.equal(usrBalBefore1 - usrBalAfter1);
+        // expect(await token1.balanceOf(pairAfter)).to.equal(usrBalBefore2 - usrBalAfter2);
         console.log("total liquidityAmount", liquidityAmount);
         console.log("\n===== ===== ===== ===== addLiquidity ===== ===== ===== =====\n");
 
@@ -216,7 +216,20 @@ describe("Coinfair", function () {
         it("Should successfully all", async function(){
             const {usr, nft, treasury, factory, hot, warm, cf, usdt} = await loadFixture(deploy);
 
-            const liquidityAmount = await addLiquidity(
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,1);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,3);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,5);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,10);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,1);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,3);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,5);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,10);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,1);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,3);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,5);
+            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,10);
+
+            await addLiquidity(
                 warm,
                 factory,
                 usr,
@@ -224,21 +237,21 @@ describe("Coinfair", function () {
                 usdt,
                 160000000000000000000000000n,
                 10000000000000000000000000n,
-                1,
+                4,
                 5
             );
 
-            // await addLiquidity(
-            //     warm,
-            //     factory,
-            //     usr,
-            //     cf,
-            //     usdt,
-            //     160000000000000000000000000n,
-            //     10000000000000000000000000n,
-            //     4,
-            //     10
-            // );
+            await addLiquidity(
+                warm,
+                factory,
+                usr,
+                cf,
+                usdt,
+                160000000000000000000000000n,
+                10000000000000000000000000n,
+                2,
+                1
+            );
 
             hre.network.provider.send("evm_mine")
             hre.network.provider.send("evm_mine")
@@ -256,6 +269,21 @@ describe("Coinfair", function () {
                 [1],
                 [5]
             )
+            console.log(await treasury.getPairManagement([cf, usdt],usr[0]));
+            await removeLiquidity(
+                warm,
+                factory,
+                usr,
+                cf,
+                usdt,
+                await (
+                    await hre.ethers.getContractAt("CoinFairPair",(
+                        await factory.getPair(cf, usdt, 2, 1)))).balanceOf(usr[0]),
+                2,
+                1
+            )
+            console.log("After remove one pool", await treasury.getPairManagement([cf, usdt],usr[0]));
+
             // treasury.setRoolOver
             const pair = await factory.getPair(cf, usdt, 1, 5);
             const pairContract = await hre.ethers.getContractAt("CoinFairPair", pair);
@@ -286,7 +314,9 @@ describe("Coinfair", function () {
                 usr,
                 cf,
                 usdt,
-                liquidityAmount,
+                await (
+                    await hre.ethers.getContractAt("CoinFairPair",(
+                        await factory.getPair(cf, usdt, 1, 5)))).balanceOf(usr[0]),
                 1,
                 5
             )

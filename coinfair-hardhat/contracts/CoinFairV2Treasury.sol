@@ -4,6 +4,7 @@ pragma solidity =0.6.6;
 
 // helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
 library TransferHelper {
+
     function safeApprove(address token, address to, uint value) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
@@ -25,6 +26,17 @@ library TransferHelper {
     function safeTransferETH(address to, uint value) internal {
         (bool success,) = to.call{value:value}(new bytes(0));
         require(success, 'TransferHelper: ETH_TRANSFER_FAILED');
+    }
+
+    function sendValue(address payable recipient, uint256 amount) internal {
+        if (address(this).balance < amount) {
+            revert();
+        }
+
+        (bool success, ) = recipient.call{value: amount}("");
+        if (!success) {
+            revert();
+        }
     }
 }
 
@@ -191,6 +203,10 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
     struct usrPoolManagement{
         address usrPair;
+        uint8 poolType;
+        uint fee;
+        uint reserve0;
+        uint reserve1;
         uint256 usrBal;
     }
 
@@ -232,6 +248,12 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
         CoinFairNFTAddress = _CoinFairNFTAddress;
         CoinFairWarmRouterAddress = _CoinFairWarmRouterAddress;
         setDEXAddressLock = true;
+    }
+
+    // Receive the eth accidentally entered into the contract
+    function collectETH() public onlyCoinFair {
+        require(address(this).balance > 0, "CoinFairTreasury:Zero ETH");
+       TransferHelper.sendValue(payable(msg.sender), address(this).balance);
     }
 
     // usually called by factory, 'approve' operate in factory and 'transfer' operate in treasury
@@ -419,9 +441,13 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
                 else{
                     uint256 usrBal = ICoinFairPair(pair).balanceOf(usrAddr);
                     if(usrBal != 0){
+                        (uint reserve0_, uint reserve1_, ) = ICoinFairPair(pair).getReserves();
                         UsrPoolManagement[index].usrPair = pair;
+                        UsrPoolManagement[index].poolType = ICoinFairPair(pair).getPoolType();
+                        UsrPoolManagement[index].fee = ICoinFairPair(pair).getFee();
+                        UsrPoolManagement[index].reserve0 = reserve0_;
+                        UsrPoolManagement[index].reserve1 = reserve1_;
                         UsrPoolManagement[index].usrBal = usrBal;
-
                         index = index + 1;
                     }
                 }
