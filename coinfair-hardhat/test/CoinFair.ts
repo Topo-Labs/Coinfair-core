@@ -32,28 +32,28 @@ describe("Coinfair", function () {
     async function deploy() {
         const usr = await hre.ethers.getSigners();
 
-        const NFT = await hre.ethers.getContractFactory("CoinFairNFT");
+        const NFT = await hre.ethers.getContractFactory("CoinfairNFT");
         const nft = await NFT.deploy();
         
-        const Treasury = await hre.ethers.getContractFactory("CoinFairV2Treasury");
+        const Treasury = await hre.ethers.getContractFactory("CoinfairTreasury");
         const treasury = await Treasury.deploy();
 
-        const Factory = await hre.ethers.getContractFactory("CoinFairFactory");
+        const Factory = await hre.ethers.getContractFactory("CoinfairFactory");
         const factory = await Factory.deploy(treasury.target);
 
-        const CoinFairLibrary = await hre.ethers.getContractFactory("CoinFairLibrary");
-        const coinFairLibrary = await CoinFairLibrary.deploy();
+        const CoinfairLibrary = await hre.ethers.getContractFactory("CoinfairLibrary");
+        const coinfairLibrary = await CoinfairLibrary.deploy();
 
-        const Hot = await hre.ethers.getContractFactory("CoinFairHotRouter", {
+        const Hot = await hre.ethers.getContractFactory("CoinfairHotRouter", {
             libraries: {
-                CoinFairLibrary: coinFairLibrary.target,
+                CoinfairLibrary: coinfairLibrary.target,
             },
         });
         const hot = await Hot.deploy(factory.target);
 
-        const Warm = await hre.ethers.getContractFactory("CoinFairWarmRouter", {
+        const Warm = await hre.ethers.getContractFactory("CoinfairWarmRouter", {
             libraries: {
-                CoinFairLibrary: coinFairLibrary.target,
+                CoinfairLibrary: coinfairLibrary.target,
             },
         });
         const warm = await Warm.deploy(factory.target);
@@ -96,7 +96,7 @@ describe("Coinfair", function () {
         console.log("pair: ",pairAfter);
         expect(pairAfter).to.not.equal(zeroAddress);
         
-        const pairContract = await hre.ethers.getContractAt("CoinFairPair", pairAfter);
+        const pairContract = await hre.ethers.getContractAt("CoinfairPair", pairAfter);
         const liquidityAmount = await pairContract.balanceOf(usr[0]);
         await pairContract.approve(warm, liquidityAmount);
         // expect(await token0.balanceOf(pairAfter)).to.equal(usrBalBefore1 - usrBalAfter1);
@@ -117,7 +117,7 @@ describe("Coinfair", function () {
         console.log("pair: ",pair);
         expect(pair).to.not.equal(zeroAddress);
         
-        const pairContract = await hre.ethers.getContractAt("CoinFairPair", pair);
+        const pairContract = await hre.ethers.getContractAt("CoinfairPair", pair);
         const removeLiquidityReceipt = await (await warm.removeLiquidity(token0, token1, liqAmount, 1, 1, usr[0], 999999999999, poolType, fee)).wait();
 
         const usrBalAfter1 = await token0.balanceOf(usr[0]);
@@ -135,21 +135,21 @@ describe("Coinfair", function () {
         const usrBalBefore1 = await token[0].balanceOf(usr[0]);
         const usrBalBefore2 = await token[token.length-1].balanceOf(usr[0]);
         const pair = await factory.getPair(token[0].target, token[token.length-1].target, poolType[0], fee[0]);
-        const pairContract = await hre.ethers.getContractAt("CoinFairPair", pair);
+        const pairContract = await hre.ethers.getContractAt("CoinfairPair", pair);
         const community = await pairContract.getProjectCommunityAddress()
         expect(pair).to.not.equal(zeroAddress);
         const treasuryBalBefore0 = await token[0].balanceOf(treasury);
         const treasuryBalBefore1 = await token[token.length-1].balanceOf(treasury);
-        const communityTreasuryBefore0 = await treasury.CoinFairUsrTreasury(community, token[0]);
-        const communityTreasuryBefore1 = await treasury.CoinFairUsrTreasury(community, token[token.length-1]);
-        const feetoTreasuryBefore0 = await treasury.CoinFairUsrTreasury(await factory.feeTo(), token[0]);
-        const feetoTreasuryBefore1 = await treasury.CoinFairUsrTreasury(await factory.feeTo(), token[token.length-1]);
+        const communityTreasuryBefore0 = await treasury.CoinfairUsrTreasury(community, token[0]);
+        const communityTreasuryBefore1 = await treasury.CoinfairUsrTreasury(community, token[token.length-1]);
+        const feetoTreasuryBefore0 = await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[0]);
+        const feetoTreasuryBefore1 = await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[token.length-1]);
 
         console.log(usr[0].address)
         const parentAddr = await nft.parentAddress(usr[0]);
         
-        const parentTreasuryBefore0 = await treasury.CoinFairUsrTreasury(parentAddr, token[0]);
-        const parentTreasuryBefore1 = await treasury.CoinFairUsrTreasury(parentAddr, token[token.length-1]);
+        const parentTreasuryBefore0 = await treasury.CoinfairUsrTreasury(parentAddr, token[0]);
+        const parentTreasuryBefore1 = await treasury.CoinfairUsrTreasury(parentAddr, token[token.length-1]);
 
 
         const swapReceipt = await(await hot.swapExactTokensForTokens(amountIn, 1, token, poolType, fee, usr[0], 999999999999)).wait()
@@ -173,21 +173,21 @@ describe("Coinfair", function () {
         console.log("Treasury Balance Change  : ",await token[0].name(),await token[0].balanceOf(treasury)-treasuryBalBefore0);
         console.log("Treasury Balance Change  : ",await token[token.length-1].name(),await token[token.length-1].balanceOf(treasury)-treasuryBalBefore1);
         console.log("community Addr           :", community);
-        console.log("community Treasury Change: ",await token[0].name(),await treasury.CoinFairUsrTreasury(community, token[0])-communityTreasuryBefore0);
-        console.log("community Treasury Change: ",await token[token.length-1].name(),await treasury.CoinFairUsrTreasury(community, token[token.length-1])-communityTreasuryBefore1);
+        console.log("community Treasury Change: ",await token[0].name(),await treasury.CoinfairUsrTreasury(community, token[0])-communityTreasuryBefore0);
+        console.log("community Treasury Change: ",await token[token.length-1].name(),await treasury.CoinfairUsrTreasury(community, token[token.length-1])-communityTreasuryBefore1);
 
         console.log("feeto Addr               :", await factory.feeTo());
-        console.log("feeto Treasury Change    : ",await token[0].name(),await treasury.CoinFairUsrTreasury(await factory.feeTo(), token[0])-feetoTreasuryBefore0);
-        console.log("feeto Treasury Change    : ",await token[token.length-1].name(),await treasury.CoinFairUsrTreasury(await factory.feeTo(), token[token.length-1])-feetoTreasuryBefore1);
+        console.log("feeto Treasury Change    : ",await token[0].name(),await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[0])-feetoTreasuryBefore0);
+        console.log("feeto Treasury Change    : ",await token[token.length-1].name(),await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[token.length-1])-feetoTreasuryBefore1);
 
         console.log("parent Addr              :", parentAddr)
-        console.log("feeto Treasury Change    : ",await token[0].name(),await treasury.CoinFairUsrTreasury(parentAddr, token[0])-parentTreasuryBefore0)
-        console.log("feeto Treasury Change    : ",await token[token.length-1].name(),await treasury.CoinFairUsrTreasury(parentAddr, token[token.length-1])-parentTreasuryBefore1);
+        console.log("feeto Treasury Change    : ",await token[0].name(),await treasury.CoinfairUsrTreasury(parentAddr, token[0])-parentTreasuryBefore0)
+        console.log("feeto Treasury Change    : ",await token[token.length-1].name(),await treasury.CoinfairUsrTreasury(parentAddr, token[token.length-1])-parentTreasuryBefore1);
         console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
 
     }
 
-    describe("CoinFair", function () {
+    describe("Coinfair", function () {
         it("Should be successfully deployed", async function () {
           const {usr, nft, treasury, factory, hot, warm, cf, usdt} = await loadFixture(deploy);
 
@@ -208,7 +208,7 @@ describe("Coinfair", function () {
           console.log("usdt:               ",usdt.target);
           console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
 
-          const warmAddr = await treasury.CoinFairWarmRouterAddress();
+          const warmAddr = await treasury.CoinfairWarmRouterAddress();
           console.log(hre.ethers.AbiCoder)
           expect(hre.ethers.getAddress(warmAddr)).to.equal(warm.target);
         });
@@ -277,7 +277,7 @@ describe("Coinfair", function () {
                 cf,
                 usdt,
                 await (
-                    await hre.ethers.getContractAt("CoinFairPair",(
+                    await hre.ethers.getContractAt("CoinfairPair",(
                         await factory.getPair(cf, usdt, 2, 1)))).balanceOf(usr[0]),
                 2,
                 1
@@ -286,7 +286,7 @@ describe("Coinfair", function () {
 
             // treasury.setRoolOver
             const pair = await factory.getPair(cf, usdt, 1, 5);
-            const pairContract = await hre.ethers.getContractAt("CoinFairPair", pair);
+            const pairContract = await hre.ethers.getContractAt("CoinfairPair", pair);
 
             await treasury.setRoolOver(pairContract.target,true);
             console.log("roolOver: ",await pairContract.roolOver());
@@ -315,7 +315,7 @@ describe("Coinfair", function () {
                 cf,
                 usdt,
                 await (
-                    await hre.ethers.getContractAt("CoinFairPair",(
+                    await hre.ethers.getContractAt("CoinfairPair",(
                         await factory.getPair(cf, usdt, 1, 5)))).balanceOf(usr[0]),
                 1,
                 5

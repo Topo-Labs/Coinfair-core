@@ -25,7 +25,7 @@ library SafeMath {
     }
 }
 
-interface ICoinFairFactory {
+interface ICoinfairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
     function getPair(address tokenA, address tokenB, uint8 poolType, uint fee) external view returns (address pair);
@@ -45,12 +45,12 @@ interface ICoinFairFactory {
 
     function feeToWeight() external view returns (uint8);
 
-    function CoinFairTreasury() external view returns(address);
+    function CoinfairTreasury() external view returns(address);
     
     function WETH()external view returns(address);
 }
 
-interface ICoinFairPair {
+interface ICoinfairPair {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
@@ -107,7 +107,7 @@ interface ICoinFairPair {
     
 }
 
-interface ICoinFairERC20 {
+interface ICoinfairERC20 {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
@@ -181,11 +181,11 @@ interface IERC20 {
     function transferFrom(address from, address to, uint value) external returns (bool);
 }
 
-interface ICoinFairCallee {
-    function CoinFairCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
+interface ICoinfairCallee {
+    function CoinfairCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
 }
 
-interface ICoinFairV2Treasury {
+interface ICoinfairTreasury {
     event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
     event WithdrawFee(address indexed token, address indexed owner, uint amount);
 
@@ -203,10 +203,10 @@ interface ICoinFairV2Treasury {
 
 }
 
-contract CoinFairERC20 is ICoinFairERC20 {
+contract CoinfairERC20 is ICoinfairERC20 {
     using SafeMath for uint;
 
-    string public constant name = 'CoinFair LPs';
+    string public constant name = 'Coinfair LPs';
     string public constant symbol = 'PE-LP';
     uint8 public constant decimals = 18;
     uint  public totalSupply;
@@ -279,7 +279,7 @@ contract CoinFairERC20 is ICoinFairERC20 {
 }
 
 // Generally, token0 and token1 are ordered, and tokenA and tokenB are unordered
-contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
+contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
 
@@ -289,7 +289,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     address public factory;
     address public token0;
     address public token1;
-    address public CoinFairTreasury;
+    address public CoinfairTreasury;
     address public ProjectCommunityAddress;
     uint256 public exponent0;
     uint256 public exponent1;
@@ -316,7 +316,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     uint private unlocked = 1;
 
     modifier lock() {
-        require(unlocked == 1, 'CoinFair: LOCKED');
+        require(unlocked == 1, 'Coinfair: LOCKED');
         unlocked = 0;
         _;
         unlocked = 1;
@@ -336,21 +336,21 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
     constructor() public {
         factory = msg.sender;
-        CoinFairTreasury = ICoinFairFactory(factory).CoinFairTreasury();
+        CoinfairTreasury = ICoinfairFactory(factory).CoinfairTreasury();
     }
     
     function setIsPoolFeeOn(uint _isPoolFeeOn)public {
-        require(msg.sender == CoinFairTreasury,'CoinFair : REFUSE');
+        require(msg.sender == CoinfairTreasury,'Coinfair : REFUSE');
         isPoolFeeOn = _isPoolFeeOn;
     }
 
     function setRoolOver(bool _roolOver)public {
-        require(msg.sender == CoinFairTreasury,'CoinFair : REFUSE');
+        require(msg.sender == CoinfairTreasury,'Coinfair : REFUSE');
         roolOver = _roolOver;
     }
 
     function setProjectCommunityAddress(address _projectCommunityAddress)public {
-        require(msg.sender == CoinFairTreasury,'CoinFair : REFUSE');
+        require(msg.sender == CoinfairTreasury,'Coinfair : REFUSE');
         ProjectCommunityAddress = _projectCommunityAddress;
     }
 
@@ -384,12 +384,12 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
     function _safeTransfer(address token, address to, uint value) private {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(SELECTOR, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'CoinFair: TRANSFER_FAILED');
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Coinfair: TRANSFER_FAILED');
     }
 
     // called once by the factory at time of deployment
     function initialize(address _token0, address _token1, uint256 _exponent0, uint256 _exponent1,uint _fee,uint8 _poolType) external {
-        require(msg.sender == factory, 'CoinFair: FORBIDDEN'); // sufficient check
+        require(msg.sender == factory, 'Coinfair: FORBIDDEN'); // sufficient check
         require(_fee == 1 || _fee == 3 || _fee == 5 || _fee == 10, "ERROR FEE");
         require(_token0 != address(0) && _token1 != address(0));
         token0 = _token0;
@@ -402,7 +402,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
 
     // update reserves and, on the first call per block, price accumulators
     function _update(uint balance0, uint balance1, uint112 _reserve0, uint112 _reserve1, uint256 _exponent0, uint256 _exponent1) private {
-        require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'CoinFair: OVERFLOW');
+        require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'Coinfair: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
@@ -420,7 +420,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     // When the pool is added/removed, the liquidity rewards accumulated previously will be transferred to a fund account through lptoken
     // kLast：The K after the last liquidity addition is compared with the current K, so we can know how much the increased service charge is
     function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
-        uint8 feeToWeight = ICoinFairFactory(factory).feeToWeight();
+        uint8 feeToWeight = ICoinfairFactory(factory).feeToWeight();
         
         feeOn = feeToWeight * isPoolFeeOn > 0;
         uint _kLast = kLast; // gas savings
@@ -434,7 +434,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
                     uint denominator = rootK.mul(leftWeight).add(rootKLast.mul(feeToWeight));
                     uint liquidity = numerator / denominator;
                     if (liquidity > 0) {
-                        _mint(ICoinFairFactory(factory).feeTo(), liquidity);
+                        _mint(ICoinfairFactory(factory).feeTo(), liquidity);
                     }
                 }
             }
@@ -460,7 +460,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         } else {
             liquidity = Math.min(amount0.mul(_totalSupply) / _reserve0, amount1.mul(_totalSupply) / _reserve1);
         }
-        require(liquidity > 0, 'CoinFair: INSUFFICIENT_LIQUIDITY_MINTED');
+        require(liquidity > 0, 'Coinfair: INSUFFICIENT_LIQUIDITY_MINTED');
         _mint(to, liquidity);
 
         _update(balance0, balance1, _reserve0, _reserve1, exponent0, exponent1);
@@ -482,7 +482,7 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
         uint _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
         amount0 = liquidity.mul(balance0) / _totalSupply; // using balances ensures pro-rata distribution
         amount1 = liquidity.mul(balance1) / _totalSupply; // using balances ensures pro-rata distribution
-        require(amount0 > 0 && amount1 > 0, 'CoinFair: INSUFFICIENT_LIQUIDITY_BURNED');
+        require(amount0 > 0 && amount1 > 0, 'Coinfair: INSUFFICIENT_LIQUIDITY_BURNED');
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
         _safeTransfer(_token1, to, amount1);
@@ -648,20 +648,20 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     
     // this low-level function should be called from a contract which performs important safety checks
     function swap(uint amount0Out, uint amount1Out, uint fee_ ,address to, bytes calldata data) external lock {
-        require(msg.sender == ICoinFairFactory(factory).hotRouterAddress(), 'not router');
-        require(amount0Out > 0 || amount1Out > 0, 'CoinFair: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(msg.sender == ICoinfairFactory(factory).hotRouterAddress(), 'not router');
+        require(amount0Out > 0 || amount1Out > 0, 'Coinfair: INSUFFICIENT_OUTPUT_AMOUNT');
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
-        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'CoinFair: INSUFFICIENT_LIQUIDITY');
+        require(amount0Out < _reserve0 && amount1Out < _reserve1, 'Coinfair: INSUFFICIENT_LIQUIDITY');
 
         (uint balance0, uint balance1) = _swapAssist(to, amount0Out, amount1Out, fee_, data);
         // Calculate the complete input amount
         // uint amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
         // uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
-        require(( balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0) > 0 || (balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0) > 0, 'CoinFair: INSUFFICIENT_INPUT_AMOUNT');
+        require(( balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0) > 0 || (balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0) > 0, 'Coinfair: INSUFFICIENT_INPUT_AMOUNT');
         
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
         require(exp(balance0, exponent0, 32).mul(exp(balance1, exponent1, 32)) >= 
-            exp(_reserve0, exponent0, 32).mul(exp(_reserve1, exponent1, 32)), 'CoinFair: K');
+            exp(_reserve0, exponent0, 32).mul(exp(_reserve1, exponent1, 32)), 'Coinfair: K');
         }
         _update(balance0, balance1, _reserve0, _reserve1, exponent0, exponent1);
         emit Swap(msg.sender, balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0, balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0, amount0Out, amount1Out, to);
@@ -670,21 +670,21 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory data)internal returns(uint,uint){
         address _token0 = token0;
         address _token1 = token1;
-        require(to != _token0 && to != _token1, 'CoinFair: INVALID_TO');
+        require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
 
-        // pay fee to CoinFairTreasury
+        // pay fee to CoinfairTreasury
         if(exponent0 == 32 && exponent1 == 32 && roolOver){
-            TransferHelper.safeApprove(_token0, CoinFairTreasury, fee_);
-            ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token0, to, fee_, address(this));
+            TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+            ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
         }else{
-            TransferHelper.safeApprove(_token1, CoinFairTreasury, fee_);
-            ICoinFairV2Treasury(CoinFairTreasury).collectFee(_token1, to, fee_, address(this));
+            TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+            ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
         }
 
         if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
         if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
 
-        if (data.length > 0) ICoinFairCallee(to).CoinFairCall(msg.sender, amount0Out, amount1Out, data);
+        if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
         return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
     }
 
@@ -702,14 +702,14 @@ contract CoinFairPair is ICoinFairPair, CoinFairERC20 {
     }
 }
 
-contract CoinFairFactory is ICoinFairFactory {
-    bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(CoinFairPair).creationCode));
+contract CoinfairFactory is ICoinfairFactory {
+    bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(CoinfairPair).creationCode));
     
     address public feeToSetter;
     address public feeTo;
     uint8 public feeToWeight;
     address public hotRouterAddress;
-    address public CoinFairTreasury;
+    address public CoinfairTreasury;
     address public WETH;
 
     mapping(address => mapping(address => mapping(uint8 => mapping(uint => address)))) public getPair;
@@ -718,14 +718,14 @@ contract CoinFairFactory is ICoinFairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint length, uint fee);
 
 
-    constructor(address _coinFairTreasury) public {
+    constructor(address _coinfairTreasury) public {
         feeToSetter = msg.sender;
         feeTo = 0xEE89C7d5B07f163b613a7941eD4d1446FF0d6709;
         feeToWeight = 0;
 
         WETH = 0x4200000000000000000000000000000000000006;
 
-        CoinFairTreasury = _coinFairTreasury;
+        CoinfairTreasury = _coinfairTreasury;
     }
 
     function allPairsLength() external view returns (uint) {
@@ -733,10 +733,10 @@ contract CoinFairFactory is ICoinFairFactory {
     }
 
     function createPair(address tokenA, address tokenB,uint256 exponentA,uint256 exponentB,uint fee) external returns (address pair) {
-        require(tokenA != tokenB, 'CoinFair: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, 'Coinfair: IDENTICAL_ADDRESSES');
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         (uint256 exponent0, uint256 exponent1) = tokenA < tokenB ? (exponentA, exponentB) : (exponentB, exponentA);
-        require(token0 != address(0), 'CoinFair: ZERO_ADDRESS');
+        require(token0 != address(0), 'Coinfair: ZERO_ADDRESS');
 
         uint8 poolType;
         if(exponentA == 32 && exponentB == 32){poolType = 1;}
@@ -745,15 +745,15 @@ contract CoinFairFactory is ICoinFairFactory {
         else if (exponentA == 32 && exponentB == 1){poolType = 4;}
         else if (exponentA == 1 && exponentB == 32){poolType = 5;}
  
-        require(getPair[token0][token1][poolType][fee] == address(0), 'CoinFair: PAIR_EXISTS'); // single check is sufficient
-        bytes memory bytecode = type(CoinFairPair).creationCode;
+        require(getPair[token0][token1][poolType][fee] == address(0), 'Coinfair: PAIR_EXISTS'); // single check is sufficient
+        bytes memory bytecode = type(CoinfairPair).creationCode;
 
         bytes32 salt = keccak256(abi.encodePacked(token0, token1, poolType, fee));
         assembly {
             pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
         
-        ICoinFairPair(pair).initialize(token0, token1, exponent0, exponent1, fee, poolType);
+        ICoinfairPair(pair).initialize(token0, token1, exponent0, exponent1, fee, poolType);
         getPair[token0][token1][poolType][fee] = pair;
         getPair[token1][token0][poolType][fee] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
@@ -764,8 +764,8 @@ contract CoinFairFactory is ICoinFairFactory {
 
     function setFeeToSetter(address _feeToSetter) external {
         require(msg.sender == feeToSetter || 
-                msg.sender == CoinFairTreasury,
-                'CoinFair: FORBIDDEN');
+                msg.sender == CoinfairTreasury,
+                'Coinfair: FORBIDDEN');
         require(_feeToSetter != address(0));
 
         feeToSetter = _feeToSetter;
@@ -773,8 +773,8 @@ contract CoinFairFactory is ICoinFairFactory {
 
     function setFeeTo(address _feeTo) external {
         require(msg.sender == feeToSetter || 
-                msg.sender == CoinFairTreasury,
-                'CoinFair: FORBIDDEN');
+                msg.sender == CoinfairTreasury,
+                'Coinfair: FORBIDDEN');
         require(_feeTo != address(0));
 
         feeTo = _feeTo;
@@ -782,15 +782,15 @@ contract CoinFairFactory is ICoinFairFactory {
 
     function setFeeToWeight(uint8 _feeToWeight) external {
         require(msg.sender == feeToSetter || 
-                msg.sender == CoinFairTreasury,
-                'CoinFair: FORBIDDEN');
-        require(_feeToWeight <= 30, 'CoinFair:Weight too big to set');
+                msg.sender == CoinfairTreasury,
+                'Coinfair: FORBIDDEN');
+        require(_feeToWeight <= 30, 'Coinfair:Weight too big to set');
 
         feeToWeight = _feeToWeight;
     }
 
     function setHotRouterAddress(address _hotRouterAddress) external {
-        require(msg.sender == feeToSetter,'CoinFair: FORBIDDEN');
+        require(msg.sender == feeToSetter,'Coinfair: FORBIDDEN');
         require(_hotRouterAddress != address(0));
 
         hotRouterAddress = _hotRouterAddress;

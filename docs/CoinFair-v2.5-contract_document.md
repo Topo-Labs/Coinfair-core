@@ -33,30 +33,34 @@ opbnb：
 
 base：
 
+部署地址：0x7eb9cfa85f4bfe5ffd352ec417ba9011d755a7c0
+
+- CoinfairLibrary：
+  - 0xa66e1d6c0888b314ad2355931172948e408dbfd0
+
 - CoinFairHotRouter：
-  - 0xA583A12C94AEE7fD15CB35D657BA7363c725ef24
-
+  - 0x7E37d250De9575Cf207Fc30324e4a5152D903Ff7
+  - https://basescan.org/address/0x7E37d250De9575Cf207Fc30324e4a5152D903Ff7
 - CoinFairWarmRouter：
-  - 0x7C422B9D1C57C565Cc6B65B607df0c1Ca1Dfa237
-
+  - 0xdaA62d650cfcbaa2230bd1777C420546ca1002e6
+  - https://basescan.org/address/0xdaA62d650cfcbaa2230bd1777C420546ca1002e6
 - Factory：
-  - 0x43655722C23dd301fBecb7Ed846125942ff4581E
-
+  - 0xD6f617c9109af947E3dD119984cf84371AA2c80c
+  - https://basescan.org/address/0xD6f617c9109af947E3dD119984cf84371AA2c80c
 - Initcode：
-  - 0xc2a43bb225edb416ed87ef24c79f1d7e61a99837edc8428668a94edf0b625acd
-
+  - 0x1bb5d0e3a08ac3c368eb7b52745b3eff9b4d4166cd47c2fbe07bd242bd39fb5b
 - CoinFairTreasury：
-  - 0xA3a654488E8F92BF3eb6D7BAf8a0377e73FF136D
-
+  - 0x2845CB324A29bF5Ccaa808C269a5966066547269
+  - https://basescan.org/address/0x2845CB324A29bF5Ccaa808C269a5966066547269
 - CoinFairNFT：
-  - 0x197e3C0dc6f5C18584989864945162631Ae832AE
-
+  - 0xbbD06F6B432B45F9A12c2fa293e1A65ABeD3c9E1
+  - https://basescan.org/address/0xbbD06F6B432B45F9A12c2fa293e1A65ABeD3c9E1
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-26 16:40
+更新时间：9-27 4:40
 
 
 

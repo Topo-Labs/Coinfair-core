@@ -124,7 +124,20 @@
 	},
 	{
 		"inputs": [],
-		"name": "CoinFair",
+		"name": "AUTHORS",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "Coinfair",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -137,7 +150,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "CoinFairFactoryAddress",
+		"name": "CoinfairFactoryAddress",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -161,7 +174,7 @@
 				"type": "address"
 			}
 		],
-		"name": "CoinFairLPPrison",
+		"name": "CoinfairLPPrison",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -184,7 +197,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "CoinFairNFTAddress",
+		"name": "CoinfairNFTAddress",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -203,7 +216,7 @@
 				"type": "address"
 			}
 		],
-		"name": "CoinFairTotalTreasury",
+		"name": "CoinfairTotalTreasury",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -227,7 +240,31 @@
 				"type": "address"
 			}
 		],
-		"name": "CoinFairUsrTreasury",
+		"name": "CoinfairUsrTreasury",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "CoinfairUsrTreasuryTotal",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -240,7 +277,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "CoinFairWarmRouterAddress",
+		"name": "CoinfairWarmRouterAddress",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -397,7 +434,7 @@
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct CoinFairV2Treasury.usrPoolManagement[]",
+				"internalType": "struct CoinfairTreasury.usrPoolManagement[]",
 				"name": "UsrPoolManagement_",
 				"type": "tuple[]"
 			}
@@ -484,17 +521,17 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_CoinFairFactoryAddress",
+				"name": "_CoinfairFactoryAddress",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-				"name": "_CoinFairNFTAddress",
+				"name": "_CoinfairNFTAddress",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-				"name": "_CoinFairWarmRouterAddress",
+				"name": "_CoinfairWarmRouterAddress",
 				"type": "address"
 			}
 		],

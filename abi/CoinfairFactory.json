@@ -82,7 +82,22 @@
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "CoinFairTreasury",
+		"name": "AUTHORS",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "CoinfairTreasury",
 		"outputs": [
 			{
 				"internalType": "address",

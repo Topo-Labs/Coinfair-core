@@ -28,11 +28,11 @@ library TransferHelper {
     }
 }
 
-// File: contracts\interfaces\ICoinFairRouter01.sol
+// File: contracts\interfaces\ICoinfairRouter01.sol
 
 pragma solidity =0.6.6;
 
-interface ICoinFairWarmRouter {
+interface ICoinfairWarmRouter {
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
 
@@ -88,11 +88,11 @@ interface ICoinFairWarmRouter {
     function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
-// File: contracts\interfaces\ICoinFairRouter02.sol
+// File: contracts\interfaces\ICoinfairRouter02.sol
 
 pragma solidity =0.6.6;
 
-interface ICoinFairHotRouter{
+interface ICoinfairHotRouter{
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
 
@@ -162,11 +162,11 @@ interface ICoinFairHotRouter{
     function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
-// File: contracts\interfaces\ICoinFairFactory.sol
+// File: contracts\interfaces\ICoinfairFactory.sol
 
 pragma solidity =0.6.6;
 
-interface ICoinFairFactory {
+interface ICoinfairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
     function getPair(address tokenA, address tokenB, uint8 poolType, uint fee) external view returns (address pair);
@@ -186,7 +186,7 @@ interface ICoinFairFactory {
 
     function feeToWeight() external view returns (uint8);
 
-    function CoinFairTreasury() external view returns(address);
+    function CoinfairTreasury() external view returns(address);
     
     function WETH()external view returns(address);
 }
@@ -211,11 +211,11 @@ library SafeMath {
 
 }
 
-// File: contracts\interfaces\ICoinFairPair.sol
+// File: contracts\interfaces\ICoinfairPair.sol
 
 pragma solidity =0.6.6;
 
-interface ICoinFairPair {
+interface ICoinfairPair {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
@@ -274,7 +274,7 @@ interface ICoinFairPair {
 
 pragma solidity =0.6.6;
 
-library CoinFairLibrary {
+library CoinfairLibrary {
     using SafeMath for uint;
 
     uint private constant pow128 = 2 ** 128;
@@ -435,9 +435,9 @@ library CoinFairLibrary {
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-        require(tokenA != tokenB, 'CoinFairLibrary: IDENTICAL_ADDRESSES');
+        require(tokenA != tokenB, 'CoinfairLibrary: IDENTICAL_ADDRESSES');
         (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'CoinFairLibrary: ZERO_ADDRESS');
+        require(token0 != address(0), 'CoinfairLibrary: ZERO_ADDRESS');
     }
 
     // calculates the CREATE2 address for a pair without making any external calls
@@ -447,21 +447,21 @@ library CoinFairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'5883e9d66cb2c5b7ea370a467210d7da36a5febae1d3b70dabb172e22c38ec99' // init code hash
+                hex'a1e9ea9cc3ace9eb678c30f2a79b594a424bf63222a19e1c2b088e3fa47e0f0f' // init code hash
             ))));
     }
 
     // fetches and sorts the reserves for a pair
     function getReserves(address factory, address tokenA, address tokenB,uint8 poolType, uint fee) internal view returns (uint reserveA, uint reserveB) {
-        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
-        (uint reserve0, uint reserve1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getReserves();
+        address token0 = ICoinfairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
+        (uint reserve0, uint reserve1,) = ICoinfairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getReserves();
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
     // fetches and sorts the exponents for a pair
     function getExponents(address factory, address tokenA, address tokenB, uint8 poolType, uint fee) internal view returns (uint exponentA, uint exponentB) {
-        address token0 = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
-        (uint256 exponent0, uint256 exponent1,) = ICoinFairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getExponents();
+        address token0 = ICoinfairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).token0();
+        (uint256 exponent0, uint256 exponent1,) = ICoinfairPair(pairFor(factory, tokenA, tokenB, poolType, fee)).getExponents();
         (exponentA, exponentB) = tokenA == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
     }
 
@@ -472,22 +472,22 @@ library CoinFairLibrary {
 
     // given some amount of an asset and pair reserves, returns the amount of another asset
     function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
-        require(amountA > 0, 'CoinFairLibrary: INSUFFICIENT_AMOUNT');
-        require(reserveA > 0 && reserveB > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
+        require(amountA > 0, 'CoinfairLibrary: INSUFFICIENT_AMOUNT');
+        require(reserveA > 0 && reserveB > 0, 'CoinfairLibrary: INSUFFICIENT_LIQUIDITY');
         amountB = amountA.mul(reserveB) / reserveA;
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     // Based on the K conservation formula, when the amountIn A token is entered, how many B tokens need to be returned after deducting the service charge, and the result is rounded down
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountOut, uint amountOutFee) {
-        require(amountIn > 0, 'CoinFairLibrary: INSUFFICIENT_INPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
+        require(amountIn > 0, 'CoinfairLibrary: INSUFFICIENT_INPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'CoinfairLibrary: INSUFFICIENT_LIQUIDITY');
         if (exponentIn < exponentOut ||
             (exponentIn == exponentOut && roolOver)){
             // Round up the result of exp to make the output smaller
             uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
             uint256 amountInReal = amountIn.mul(uint256(1000).sub(fee))/1000;
-            // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
+            // Here * 1000-ICoinfairFactory(factory).fee/1000 will be taken down to make the output smaller
             uint256 denominator = exp(reserveIn.add(amountInReal), exponentIn, 32); 
             // Round up here to make the output smaller
             uint256 tmp = K.add(denominator-1)/denominator; 
@@ -498,7 +498,7 @@ library CoinFairLibrary {
         }else{
             // Round up the result of exp to make the output smaller
             uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
-            // Here * 1000-ICoinFairFactory(factory).fee/1000 will be taken down to make the output smaller
+            // Here * 1000-ICoinfairFactory(factory).fee/1000 will be taken down to make the output smaller
             uint256 denominator = exp(reserveIn.add(amountIn), exponentIn, 32); 
             // Round up here to make the output smaller
             uint256 tmp = K.add(denominator-1)/denominator; 
@@ -515,8 +515,8 @@ library CoinFairLibrary {
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
     // Based on the K conservation formula, if you want to replace the amountOut B token, how many A tokens need to be input when the service charge is included, and the result is rounded up
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountIn, uint amountInFee) {
-        require(amountOut > 0, 'CoinFairLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
-        require(reserveIn > 0 && reserveOut > 0, 'CoinFairLibrary: INSUFFICIENT_LIQUIDITY');
+        require(amountOut > 0, 'CoinfairLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'CoinfairLibrary: INSUFFICIENT_LIQUIDITY');
         if (exponentIn < exponentOut ||
             (exponentIn == exponentOut && roolOver)){
             // Round up the result of exp to make the input larger
@@ -548,35 +548,35 @@ library CoinFairLibrary {
 
     // performs chained getAmountOut calculations on any number of pairs
     function getAmountsOut(address factory, uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee){
-        require(path.length >= 2, 'CoinFairLibrary: INVALID_PATH');
-        require(path.length == poolTypePath.length + 1, 'CoinFair: INVALID_LENGTH');
+        require(path.length >= 2, 'CoinfairLibrary: INVALID_PATH');
+        require(path.length == poolTypePath.length + 1, 'Coinfair: INVALID_LENGTH');
         amounts = new uint[](path.length);
         amountsFee = new uint[](path.length - 1);
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
-            require(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i]) != address(0), 'CoinFair:NO_PAIR');
+            require(ICoinfairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i]) != address(0), 'Coinfair:NO_PAIR');
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]);
             (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]);
             //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i], path[i + 1]);
-            // uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getFee();
-            bool roolOver = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getRoolOver();
+            // uint _fee = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getFee();
+            bool roolOver = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getRoolOver();
             (amounts[i + 1], amountsFee[i]) = getAmountOut(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i], roolOver);
         }
     }
 
     // performs chained getAmountIn calculations on any number of pairs
     function getAmountsIn(address factory, uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath) internal view returns (uint[] memory amounts,uint[] memory amountsFee) {
-        require(path.length >= 2, 'CoinFairLibrary: INVALID_PATH');
+        require(path.length >= 2, 'CoinfairLibrary: INVALID_PATH');
         amounts = new uint[](path.length);
         amountsFee = new uint[](path.length - 1);
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
-            require(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1]) != address(0), 'CoinFair:NO_PAIR');
+            require(ICoinfairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1]) != address(0), 'Coinfair:NO_PAIR');
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1]);
             (uint256 exponentIn, uint256 exponentOut) = getExponents(factory, path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1]);
             //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i - 1], path[i]);
-            // uint _fee = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getFee();
-            bool roolOver = ICoinFairPair(ICoinFairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getRoolOver();
+            // uint _fee = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getFee();
+            bool roolOver = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getRoolOver();
             (amounts[i - 1], amountsFee[i - 1]) = getAmountIn(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i - 1], roolOver);
         }
     }
@@ -612,7 +612,7 @@ interface IWETH {
     function withdraw(uint) external;
 }
 
-interface ICoinFairV2Treasury {
+interface ICoinfairTreasury {
     event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
     event WithdrawFee(address indexed token, address indexed owner, uint amount);
 
@@ -629,18 +629,18 @@ interface ICoinFairV2Treasury {
     function setRoolOver(address pair, bool newRoolOver) external;
 }
 
-// File: contracts\CoinFairWarmRouter.sol
+// File: contracts\CoinfairWarmRouter.sol
 
 pragma solidity =0.6.6;
 
-contract CoinFairWarmRouter is ICoinFairWarmRouter {
+contract CoinfairWarmRouter is ICoinfairWarmRouter {
     using SafeMath for uint;
 
     address public immutable override factory;
     address public immutable override WETH;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'CoinFairRouter: EXPIRED');
+        require(deadline >= block.timestamp, 'CoinfairRouter: EXPIRED');
         _;
     }
 
@@ -669,14 +669,14 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint amountBOptimal = CoinFairLibrary.quote(amountADesired, reserveA, reserveB);
+            uint amountBOptimal = CoinfairLibrary.quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'CoinFairRouter: INSUFFICIENT_B_AMOUNT');
+                require(amountBOptimal >= amountBMin, 'CoinfairRouter: INSUFFICIENT_B_AMOUNT');
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint amountAOptimal = CoinFairLibrary.quote(amountBDesired, reserveB, reserveA);
+                uint amountAOptimal = CoinfairLibrary.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'CoinFairRouter: INSUFFICIENT_A_AMOUNT');
+                require(amountAOptimal >= amountAMin, 'CoinfairRouter: INSUFFICIENT_A_AMOUNT');
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
@@ -693,14 +693,14 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         else if (exponentA == 32 && exponentB == 1){poolType = 4;}
         else if (exponentA == 1 && exponentB == 32){poolType = 5;}
         // create the pair if it doesn't exist yet
-        if (ICoinFairFactory(factory).getPair(tokenA, tokenB, poolType, _fee) == address(0)) {
-            ICoinFairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,_fee);
+        if (ICoinfairFactory(factory).getPair(tokenA, tokenB, poolType, _fee) == address(0)) {
+            ICoinfairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,_fee);
             // Set the first address added liquidity to CommunityAddress
-            ICoinFairV2Treasury(ICoinFairFactory(factory).CoinFairTreasury()).setProjectCommunityAddress(
-                ICoinFairFactory(factory).getPair(tokenA, tokenB, poolType, _fee),
+            ICoinfairTreasury(ICoinfairFactory(factory).CoinfairTreasury()).setProjectCommunityAddress(
+                ICoinfairFactory(factory).getPair(tokenA, tokenB, poolType, _fee),
                 msg.sender);
         }
-        (reserveA, reserveB) = CoinFairLibrary.getReserves(factory, tokenA, tokenB, poolType, _fee);
+        (reserveA, reserveB) = CoinfairLibrary.getReserves(factory, tokenA, tokenB, poolType, _fee);
     }
 
     function addLiquidity(
@@ -715,10 +715,10 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         uint fee;
         (amountA, amountB, poolType, fee) = _addLiquidityAssist(tokenA,tokenB,addLiquidityCmd);
         // require(amountA > 0 && amountB > 0,"You have to have the token to prove it's not a dos attack");
-        address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType, fee);
+        address pair = CoinfairLibrary.pairFor(factory, tokenA, tokenB, poolType, fee);
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-        liquidity = ICoinFairPair(pair).mint(to);
+        liquidity = ICoinfairPair(pair).mint(to);
     }
 
     function _addLiquidityAssist(address tokenA, address tokenB, bytes memory addLiquidityCmd)internal returns(uint,uint,uint8,uint){
@@ -748,11 +748,11 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         uint8 poolType;
         (amountToken, amountETH, poolType,) = _addLiquidityETHAssist(token,fee,addLiquidityETHCmd);
         // require(amountToken > 0,"You have to have the token to prove it's not a dos attack");
-        address pair = CoinFairLibrary.pairFor(factory, token, WETH, poolType, fee);
+        address pair = CoinfairLibrary.pairFor(factory, token, WETH, poolType, fee);
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
-        liquidity = ICoinFairPair(pair).mint(to);
+        liquidity = ICoinfairPair(pair).mint(to);
         // refund dust eth, if any
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
     }
@@ -793,18 +793,18 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         uint8 poolType,
         uint fee
     ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-        address pair = CoinFairLibrary.pairFor(factory, tokenA, tokenB, poolType, fee);
-        ICoinFairPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+        address pair = CoinfairLibrary.pairFor(factory, tokenA, tokenB, poolType, fee);
+        ICoinfairPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
 
         (amountA, amountB) = _removeLiquidityAssist(pair, to, tokenA, tokenB);
 
-        require(amountA >= amountAMin, 'CoinFairRouter: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'CoinFairRouter: INSUFFICIENT_B_AMOUNT');
+        require(amountA >= amountAMin, 'CoinfairRouter: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'CoinfairRouter: INSUFFICIENT_B_AMOUNT');
     }
 
     function _removeLiquidityAssist(address pair, address to, address tokenA, address tokenB)internal returns(uint amountA, uint amountB){
-        (uint amount0, uint amount1) = ICoinFairPair(pair).burn(to);
-        (address token0,) = CoinFairLibrary.sortTokens(tokenA, tokenB);
+        (uint amount0, uint amount1) = ICoinfairPair(pair).burn(to);
+        (address token0,) = CoinfairLibrary.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
     }
     
@@ -863,7 +863,7 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
 
     // **** LIBRARY FUNCTIONS ****
     function quote(uint amountA, uint reserveA, uint reserveB) public pure virtual override returns (uint amountB) {
-        return CoinFairLibrary.quote(amountA, reserveA, reserveB);
+        return CoinfairLibrary.quote(amountA, reserveA, reserveB);
     }
 
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
@@ -873,7 +873,7 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         override
         returns (uint amountOut,uint amountFee)
     {   
-        return CoinFairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
+        return CoinfairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
     }
 
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
@@ -883,7 +883,7 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         override
         returns (uint amountIn,uint amountFee)
     {
-        return CoinFairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
+        return CoinfairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
     }
 
     function getAmountsOut(uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
@@ -893,7 +893,7 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         override
         returns (uint[] memory amounts,uint[] memory amountFees)
     {
-        return CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
+        return CoinfairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
     }
 
     function getAmountsIn(uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
@@ -903,23 +903,23 @@ contract CoinFairWarmRouter is ICoinFairWarmRouter {
         override
         returns (uint[] memory amounts,uint[] memory amountFees)
     {
-        return CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
+        return CoinfairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
     }
 }
 
 
-// File: contracts\CoinFairHotRouter.sol
+// File: contracts\CoinfairHotRouter.sol
 
 pragma solidity =0.6.6;
 
-contract CoinFairHotRouter is ICoinFairHotRouter {
+contract CoinfairHotRouter is ICoinfairHotRouter {
     using SafeMath for uint;
 
     address public immutable override factory;
     address public immutable override WETH;
 
     modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'CoinFairRouter: EXPIRED');
+        require(deadline >= block.timestamp, 'CoinfairRouter: EXPIRED');
         _;
     }
 
@@ -938,12 +938,12 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
     function _swap(uint[] memory amounts, uint[] memory amountsFee, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             // (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = CoinFairLibrary.sortTokens(path[i], path[i + 1]);
+            (address token0,) = CoinfairLibrary.sortTokens(path[i], path[i + 1]);
             uint amountOut = amounts[i + 1];
             (uint amount0Out, uint amount1Out) = path[i] == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? CoinFairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
+            address to = i < path.length - 2 ? CoinfairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
         
-            ICoinFairPair(CoinFairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i])).swap(
+            ICoinfairPair(CoinfairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i])).swap(
                 amount0Out, amount1Out, amountsFee[i], to, new bytes(0)
             );
         }
@@ -958,8 +958,8 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         uint deadline
     ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
         uint[] memory amountFee;
-        (amounts , amountFee) = CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        (amounts , amountFee) = CoinfairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         
         _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
         
@@ -973,7 +973,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         uint[] memory amounts
     ) internal {
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]
+            path[0], msg.sender, CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]
         );
     }
 
@@ -987,8 +987,8 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         uint deadline
     ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
          uint[] memory amountFee;
-        (amounts,amountFee) = CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
-        require(amounts[0] <= amountInMax, 'CoinFairRouter: EXCESSIVE_INPUT_AMOUNT');
+        (amounts,amountFee) = CoinfairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
+        require(amounts[0] <= amountInMax, 'CoinfairRouter: EXCESSIVE_INPUT_AMOUNT');
         _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
         _swap(amounts, amountFee, path, poolTypePath, feePath, to);
     }
@@ -1000,7 +1000,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         uint[] memory amounts
     ) internal {
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]
+            path[0], msg.sender, CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]
         );
     }
 
@@ -1012,12 +1012,12 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[0] == WETH, 'CoinFairRouter: INVALID_PATH');
+        require(path[0] == WETH, 'CoinfairRouter: INVALID_PATH');
          uint[] memory amountFee;
-        (amounts,amountFee) = CoinFairLibrary.getAmountsOut(factory, msg.value, path, poolTypePath, feePath);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        (amounts,amountFee) = CoinfairLibrary.getAmountsOut(factory, msg.value, path, poolTypePath, feePath);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]));
+        assert(IWETH(WETH).transfer(CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]));
         _swap(amounts, amountFee, path, poolTypePath, feePath, to);
     }
 
@@ -1028,10 +1028,10 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[path.length - 1] == WETH, 'CoinFairRouter: INVALID_PATH');
+        require(path[path.length - 1] == WETH, 'CoinfairRouter: INVALID_PATH');
         uint[] memory amountFee;
-        (amounts,amountFee) = CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
-        require(amounts[0] <= amountInMax, 'CoinFairRouter: EXCESSIVE_INPUT_AMOUNT');
+        (amounts,amountFee) = CoinfairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
+        require(amounts[0] <= amountInMax, 'CoinfairRouter: EXCESSIVE_INPUT_AMOUNT');
         _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
 
         _swap(amounts, amountFee, path, poolTypePath, feePath, address(this));
@@ -1045,10 +1045,10 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[path.length - 1] == WETH, 'CoinFairRouter: INVALID_PATH');
+        require(path[path.length - 1] == WETH, 'CoinfairRouter: INVALID_PATH');
         uint[] memory amountFee;
-        (amounts ,amountFee)= CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        (amounts ,amountFee)= CoinfairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
+        require(amounts[amounts.length - 1] >= amountOutMin, 'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         _safeTransferFromAssist(path, poolTypePath, feePath, amounts);
 
         _swap(amounts, amountFee, path, poolTypePath, feePath, address(this));
@@ -1063,12 +1063,12 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         ensure(deadline)
         returns (uint[] memory amounts)
     {
-        require(path[0] == WETH, 'CoinFairRouter: INVALID_PATH');
+        require(path[0] == WETH, 'CoinfairRouter: INVALID_PATH');
          uint[] memory amountFee;
-        (amounts, amountFee)= CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
-        require(amounts[0] <= msg.value, 'CoinFairRouter: EXCESSIVE_INPUT_AMOUNT');
+        (amounts, amountFee)= CoinfairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
+        require(amounts[0] <= msg.value, 'CoinfairRouter: EXCESSIVE_INPUT_AMOUNT');
         IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]));
+        assert(IWETH(WETH).transfer(CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amounts[0]));
         _swap(amounts, amountFee,path, poolTypePath, feePath, to);
         // refund dust eth, if any
         if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);
@@ -1079,8 +1079,8 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
     function _swapSupportingFeeOnTransferTokens(address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             // (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = CoinFairLibrary.sortTokens(path[i], path[i + 1]);
-            ICoinFairPair pair = ICoinFairPair(CoinFairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]));
+            (address token0,) = CoinfairLibrary.sortTokens(path[i], path[i + 1]);
+            ICoinfairPair pair = ICoinfairPair(CoinfairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]));
             
             (uint amountOutput,uint amountFee) = _swapSupportingFeeOnTransferTokensAssist(pair, path[i], token0, pair.getFee(), pair.getRoolOver());
             // { // scope to avoid stack too deep errors
@@ -1090,16 +1090,16 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
             // (uint256 exponent0, uint256 exponent1,) = pair.getExponents();
             // (uint256 exponentA, uint256 exponentB) = input == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
             // //(uint256 decimalsA, uint256 decimalsB) = (IERC20(input).decimals(), IERC20(output).decimals());
-            // // uint _fee = ICoinFairFactory(factory).getfee(path[i], path[i + 1]);
-            // (amountOutput, amountFee) = CoinFairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB,pair.getFee());
+            // // uint _fee = ICoinfairFactory(factory).getfee(path[i], path[i + 1]);
+            // (amountOutput, amountFee) = CoinfairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB,pair.getFee());
             // }
             (uint amount0Out, uint amount1Out) = path[i] == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
-            address to = i < path.length - 2 ? CoinFairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
+            address to = i < path.length - 2 ? CoinfairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
             pair.swap(amount0Out, amount1Out, amountFee , to, new bytes(0));
         }
     }
 
-    function _swapSupportingFeeOnTransferTokensAssist(ICoinFairPair pair, address input,address token0,uint fee, bool roolOver) internal view returns(uint amountOutput,uint amountFee){
+    function _swapSupportingFeeOnTransferTokensAssist(ICoinfairPair pair, address input,address token0,uint fee, bool roolOver) internal view returns(uint amountOutput,uint amountFee){
         uint reserveInput;
         uint reserveOutput;
         uint256 exponentA;
@@ -1114,7 +1114,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
             (exponentA, exponentB) = input == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
         }
         //(uint256 decimalsA, uint256 decimalsB) = (IERC20(input).decimals(), IERC20(output).decimals());
-        (amountOutput, amountFee) = CoinFairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB, fee, roolOver);
+        (amountOutput, amountFee) = CoinfairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB, fee, roolOver);
             
     }
 
@@ -1128,13 +1128,13 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         uint deadline
     ) external virtual override ensure(deadline) {
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn
+            path[0], msg.sender, CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn
         );
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, poolTypePath, feePath, to);
         require(
             IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
-            'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
+            'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
     function swapExactETHForTokensSupportingFeeOnTransferTokens(
@@ -1151,10 +1151,10 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         payable
         ensure(deadline)
     {
-        require(path[0] == WETH, 'CoinFairRouter: INVALID_PATH');
+        require(path[0] == WETH, 'CoinfairRouter: INVALID_PATH');
         uint amountIn = msg.value;
         IWETH(WETH).deposit{value: amountIn}();
-        assert(IWETH(WETH).transfer(CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn));
+        assert(IWETH(WETH).transfer(CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn));
         uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, poolTypePath, feePath, to);
         _swapExactETHForTokensSupportingFeeOnTransferTokensAssist(path, to, balanceBefore, amountOutMin);
@@ -1163,7 +1163,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
     function _swapExactETHForTokensSupportingFeeOnTransferTokensAssist(address[] memory path, address to, uint balanceBefore, uint amountOutMin) internal view{
         require(
             IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
-            'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
+            'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
     
@@ -1181,20 +1181,20 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         override
         ensure(deadline)
     {
-        require(path[path.length - 1] == WETH, 'CoinFairRouter: INVALID_PATH');
+        require(path[path.length - 1] == WETH, 'CoinfairRouter: INVALID_PATH');
         TransferHelper.safeTransferFrom(
-            path[0], msg.sender, CoinFairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn
+            path[0], msg.sender, CoinfairLibrary.pairFor(factory, path[0], path[1], poolTypePath[0], feePath[0]), amountIn
         );
         _swapSupportingFeeOnTransferTokens(path, poolTypePath, feePath, address(this));
         uint amountOut = IERC20(WETH).balanceOf(address(this));
-        require(amountOut >= amountOutMin, 'CoinFairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
+        require(amountOut >= amountOutMin, 'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT');
         IWETH(WETH).withdraw(amountOut);
         TransferHelper.safeTransferETH(to, amountOut);
     }
 
     // **** LIBRARY FUNCTIONS ****
     function quote(uint amountA, uint reserveA, uint reserveB) public pure virtual override returns (uint amountB) {
-        return CoinFairLibrary.quote(amountA, reserveA, reserveB);
+        return CoinfairLibrary.quote(amountA, reserveA, reserveB);
     }
 
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
@@ -1204,7 +1204,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         override
         returns (uint amountOut,uint amountFee)
     {   
-        return CoinFairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
+        return CoinfairLibrary.getAmountOut(amountIn, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
     }
 
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint exponentIn, uint exponentOut,uint fee, bool roolOver)
@@ -1214,7 +1214,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         override
         returns (uint amountIn,uint amountFee)
     {
-        return CoinFairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
+        return CoinfairLibrary.getAmountIn(amountOut, reserveIn, reserveOut, exponentIn, exponentOut, fee, roolOver);
     }
 
     function getAmountsOut(uint amountIn, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
@@ -1224,7 +1224,7 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         override
         returns (uint[] memory amounts,uint[] memory amountFees)
     {
-        return CoinFairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
+        return CoinfairLibrary.getAmountsOut(factory, amountIn, path, poolTypePath, feePath);
     }
 
     function getAmountsIn(uint amountOut, address[] memory path, uint8[] memory poolTypePath, uint[] memory feePath)
@@ -1234,6 +1234,6 @@ contract CoinFairHotRouter is ICoinFairHotRouter {
         override
         returns (uint[] memory amounts,uint[] memory amountFees)
     {
-        return CoinFairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
+        return CoinfairLibrary.getAmountsIn(factory, amountOut, path, poolTypePath, feePath);
     }
 }

@@ -40,7 +40,7 @@ library TransferHelper {
     }
 }
 
-interface ICoinFairFactory {
+interface ICoinfairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
     function getPair(address tokenA, address tokenB, uint8 poolType, uint fee) external view returns (address pair);
@@ -60,7 +60,7 @@ interface ICoinFairFactory {
 
     function feeToWeight() external view returns (uint8);
 
-    function CoinFairTreasury() external view returns(address);
+    function CoinfairTreasury() external view returns(address);
     
     function WETH()external view returns(address);
 }
@@ -96,12 +96,12 @@ interface IERC20 {
     function transferFrom(address from, address to, uint value) external returns (bool);
 }
 
-interface ICoinFairNFT {
+interface ICoinfairNFT {
     function level(address) external view returns (uint256);
     function getTwoParentAddress(address sonAddress) external view returns(address, address);
 }
 
-interface ICoinFairPair {
+interface ICoinfairPair {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
@@ -158,7 +158,7 @@ interface ICoinFairPair {
     
 }
 
-interface ICoinFairV2Treasury {
+interface ICoinfairTreasury {
     event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
     event WithdrawFee(address indexed token, address indexed owner, uint amount);
 
@@ -175,19 +175,19 @@ interface ICoinFairV2Treasury {
     function setRoolOver(address pair, bool newRoolOver) external;
 }
 
-interface ICoinFairWarmRouter {
+interface ICoinfairWarmRouter {
     function getAmountsOut(uint amountIn, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
     function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
-contract CoinFairV2Treasury is ICoinFairV2Treasury {
+contract CoinfairTreasury is ICoinfairTreasury {
     using SafeMath for uint;
 
-    address public CoinFairFactoryAddress;
-    address public CoinFairNFTAddress;
-    address public CoinFairWarmRouterAddress;
+    address public CoinfairFactoryAddress;
+    address public CoinfairNFTAddress;
+    address public CoinfairWarmRouterAddress;
 
-    address public CoinFair;
+    address public Coinfair;
 
     bool public setDEXAddressLock;
 
@@ -213,15 +213,15 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
     uint8[4] public fees = [1, 3, 5, 10];
 
-    // CoinFairUsrTreasury[owner][token]
-    mapping(address => mapping(address => uint256))public CoinFairUsrTreasury;
-    // CoinFairUsrTreasuryTotal[owner][token]
-    mapping(address => mapping(address => uint256))public CoinFairUsrTreasuryTotal;
-    // CoinFairTotalTreasury[token]
-    mapping(address => uint256)public CoinFairTotalTreasury;
+    // CoinfairUsrTreasury[owner][token]
+    mapping(address => mapping(address => uint256))public CoinfairUsrTreasury;
+    // CoinfairUsrTreasuryTotal[owner][token]
+    mapping(address => mapping(address => uint256))public CoinfairUsrTreasuryTotal;
+    // CoinfairTotalTreasury[token]
+    mapping(address => uint256)public CoinfairTotalTreasury;
 
-    // CoinFairLPPrison[owner][token]
-    mapping(address => mapping(address => LPPrison))public CoinFairLPPrison;
+    // CoinfairLPPrison[owner][token]
+    mapping(address => mapping(address => LPPrison))public CoinfairLPPrison;
 
     event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
     event WithdrawFee(address indexed token, address indexed owner, uint amount);
@@ -229,46 +229,46 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
     event LockLP(address indexed pair, address indexed locker, uint amount,uint256 lockTime, bool isFirstTimeLock);
     event ReleaseLP(address indexed pair, address indexed releaser, uint amount);
 
-    modifier onlyCoinFair() {
-        require(msg.sender == CoinFair,'CoinFairTreasury:ERROR OPERATOR');
+    modifier onlyCoinfair() {
+        require(msg.sender == Coinfair,'CoinfairTreasury:ERROR OPERATOR');
         _;
     }
 
     constructor()public{
         require(parentAddressLevel2Ratio > parentAddressLevel1Ratio && 
-        parentAddressLevel2Ratio.add(projectCommunityAddressRatio) < 1000, 'CoinFairTreasury:ERROR DEPLOYER');
-        CoinFair = msg.sender;
+        parentAddressLevel2Ratio.add(projectCommunityAddressRatio) < 1000, 'CoinfairTreasury:ERROR DEPLOYER');
+        Coinfair = msg.sender;
     }
 
     // init only once
-    function setDEXAddress(address _CoinFairFactoryAddress, address _CoinFairNFTAddress, address _CoinFairWarmRouterAddress)public onlyCoinFair{
-        require(_CoinFairFactoryAddress != address(0) && 
-                _CoinFairNFTAddress != address(0) &&
-                _CoinFairWarmRouterAddress != address(0), 'CoinFairTreasury:ZERO');
-        require(setDEXAddressLock == false,'CoinFairTreasury:Already set DEXAddress');
+    function setDEXAddress(address _CoinfairFactoryAddress, address _CoinfairNFTAddress, address _CoinfairWarmRouterAddress)public onlyCoinfair{
+        require(_CoinfairFactoryAddress != address(0) && 
+                _CoinfairNFTAddress != address(0) &&
+                _CoinfairWarmRouterAddress != address(0), 'CoinfairTreasury:ZERO');
+        require(setDEXAddressLock == false,'CoinfairTreasury:Already set DEXAddress');
 
-        CoinFairFactoryAddress = _CoinFairFactoryAddress;
-        CoinFairNFTAddress = _CoinFairNFTAddress;
-        CoinFairWarmRouterAddress = _CoinFairWarmRouterAddress;
+        CoinfairFactoryAddress = _CoinfairFactoryAddress;
+        CoinfairNFTAddress = _CoinfairNFTAddress;
+        CoinfairWarmRouterAddress = _CoinfairWarmRouterAddress;
         setDEXAddressLock = true;
     }
 
     // Receive the eth accidentally entered into the contract
-    function collectETH() public onlyCoinFair {
-        require(address(this).balance > 0, "CoinFairTreasury:Zero ETH");
+    function collectETH() public onlyCoinfair {
+        require(address(this).balance > 0, "CoinfairTreasury:Zero ETH");
        TransferHelper.sendValue(payable(msg.sender), address(this).balance);
     }
 
     // usually called by factory, 'approve' operate in factory and 'transfer' operate in treasury
     function collectFee(address token, address owner, uint amount, address pair)public override{
-        require(token != address(0) && owner != address(0) && amount > 0 && pair != address(0),'CoinFairTreasury:COLLECTFEE ERROR');
-        // require(msg.sender == CoinFairFactoryAddress,'CoinFairTreasury:NOT FACTORY');
-        (address parentAddress,) = ICoinFairNFT(CoinFairNFTAddress).getTwoParentAddress(owner);
-        address protocolFeeToAddress = ICoinFairFactory(CoinFairFactoryAddress).feeTo();
-        address projectCommunityAddress = ICoinFairPair(pair).getProjectCommunityAddress();
+        require(token != address(0) && owner != address(0) && amount > 0 && pair != address(0),'CoinfairTreasury:COLLECTFEE ERROR');
+        // require(msg.sender == CoinfairFactoryAddress,'CoinfairTreasury:NOT FACTORY');
+        (address parentAddress,) = ICoinfairNFT(CoinfairNFTAddress).getTwoParentAddress(owner);
+        address protocolFeeToAddress = ICoinfairFactory(CoinfairFactoryAddress).feeTo();
+        address projectCommunityAddress = ICoinfairPair(pair).getProjectCommunityAddress();
 
-        require(protocolFeeToAddress != address(0), 'CoinFairTreasury:FeeTo Is ZERO');
-        uint parentAddressRatio = ICoinFairNFT(CoinFairNFTAddress).level(parentAddress) == 0 ?
+        require(protocolFeeToAddress != address(0), 'CoinfairTreasury:FeeTo Is ZERO');
+        uint parentAddressRatio = ICoinfairNFT(CoinfairNFTAddress).level(parentAddress) == 0 ?
         parentAddressLevel1Ratio : parentAddressLevel2Ratio;
 
         if(projectCommunityAddress == address(0)){
@@ -277,16 +277,16 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
             if(parentAddress != address(0)){
                 amount1 = amount.mul(parentAddressRatio) / 1000;
-                CoinFairUsrTreasury[parentAddress][token] = CoinFairUsrTreasury[parentAddress][token].add(amount1);
-                CoinFairUsrTreasuryTotal[parentAddress][token] = CoinFairUsrTreasuryTotal[parentAddress][token].add(amount1);
+                CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(amount1);
+                CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(amount1);
             }
 
-            require(amount1 <= amount, 'CoinFairTreasury:COLLECTFEE ERROR2');
+            require(amount1 <= amount, 'CoinfairTreasury:COLLECTFEE ERROR2');
 
             if(amount1 < amount){
                 amount3 = amount.sub(amount1);
-                CoinFairUsrTreasury[protocolFeeToAddress][token] = CoinFairUsrTreasury[protocolFeeToAddress][token].add(amount3);
-                CoinFairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinFairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
+                CoinfairUsrTreasury[protocolFeeToAddress][token] = CoinfairUsrTreasury[protocolFeeToAddress][token].add(amount3);
+                CoinfairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinfairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
             }
         }else{
             uint amount1;
@@ -295,29 +295,29 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
             if(parentAddress != address(0)){
                 amount1 = amount.mul(parentAddressRatio) / 1000;
-                CoinFairUsrTreasury[parentAddress][token] = CoinFairUsrTreasury[parentAddress][token].add(amount1);
-                CoinFairUsrTreasuryTotal[parentAddress][token] = CoinFairUsrTreasuryTotal[parentAddress][token].add(amount1);
+                CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(amount1);
+                CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(amount1);
             }
 
-            require(amount1.add(amount2) <= amount, 'CoinFairTreasury:COLLECTFEE ERROR2');
+            require(amount1.add(amount2) <= amount, 'CoinfairTreasury:COLLECTFEE ERROR2');
 
             if(amount1.add(amount2) < amount){
                 amount3 = amount.sub(amount1).sub(amount2);
-                CoinFairUsrTreasury[protocolFeeToAddress][token] = CoinFairUsrTreasury[protocolFeeToAddress][token].add(amount3);
-                CoinFairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinFairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
+                CoinfairUsrTreasury[protocolFeeToAddress][token] = CoinfairUsrTreasury[protocolFeeToAddress][token].add(amount3);
+                CoinfairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinfairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
             }
-            CoinFairUsrTreasury[projectCommunityAddress][token] = CoinFairUsrTreasury[projectCommunityAddress][token].add(amount2);
-            CoinFairUsrTreasuryTotal[projectCommunityAddress][token] = CoinFairUsrTreasuryTotal[projectCommunityAddress][token].add(amount2);
+            CoinfairUsrTreasury[projectCommunityAddress][token] = CoinfairUsrTreasury[projectCommunityAddress][token].add(amount2);
+            CoinfairUsrTreasuryTotal[projectCommunityAddress][token] = CoinfairUsrTreasuryTotal[projectCommunityAddress][token].add(amount2);
         }
         
-        CoinFairTotalTreasury[token] = CoinFairTotalTreasury[token].add(amount);
+        CoinfairTotalTreasury[token] = CoinfairTotalTreasury[token].add(amount);
         emit CollectFee(token, owner, amount, pair);
 
         TransferHelper.safeTransferFrom(token, msg.sender, address(this), amount);
     }
 
     // set three ratio to divide dex fee
-    function setRatio(uint newParentAddressLevel1Ratio, uint newParentAddressLevel2Ratio, uint newProjectCommunityAddressRatio)public override onlyCoinFair{
+    function setRatio(uint newParentAddressLevel1Ratio, uint newParentAddressLevel2Ratio, uint newProjectCommunityAddressRatio)public override onlyCoinfair{
         require(newParentAddressLevel2Ratio > newParentAddressLevel1Ratio && 
             newParentAddressLevel2Ratio.add(newProjectCommunityAddressRatio) <= 1000);
 
@@ -328,41 +328,41 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
     // set a project's community address
     function setProjectCommunityAddress(address pair, address newProjectCommunityAddress)public override{
-        require(msg.sender == CoinFair || msg.sender == CoinFairWarmRouterAddress,'CoinFairTreasury:ERROR OPERATOR');
-        require(newProjectCommunityAddress != address(0),'CoinFairTreasury:ZERO');
-        ICoinFairPair(pair).setProjectCommunityAddress(newProjectCommunityAddress);
+        require(msg.sender == Coinfair || msg.sender == CoinfairWarmRouterAddress,'CoinfairTreasury:ERROR OPERATOR');
+        require(newProjectCommunityAddress != address(0),'CoinfairTreasury:ZERO');
+        ICoinfairPair(pair).setProjectCommunityAddress(newProjectCommunityAddress);
     }
 
     // open/close one pool's liquidityfee
-    function setIsPoolFeeOn(address pair, uint newIsPoolFeeOn)public override onlyCoinFair{
-        ICoinFairPair(pair).setIsPoolFeeOn(newIsPoolFeeOn);
+    function setIsPoolFeeOn(address pair, uint newIsPoolFeeOn)public override onlyCoinfair{
+        ICoinfairPair(pair).setIsPoolFeeOn(newIsPoolFeeOn);
     }
 
     // set 'poolType = 1' pool rooover fee token
-    function setRoolOver(address pair, bool newRoolOver)public override onlyCoinFair{
-        ICoinFairPair(pair).setRoolOver(newRoolOver);
+    function setRoolOver(address pair, bool newRoolOver)public override onlyCoinfair{
+        ICoinfairPair(pair).setRoolOver(newRoolOver);
     }
 
     // manage factory
-    function setFeeToSetter(address _feeToSetter) external onlyCoinFair{
-        ICoinFairFactory(CoinFairFactoryAddress).setFeeToSetter(_feeToSetter);
+    function setFeeToSetter(address _feeToSetter) external onlyCoinfair{
+        ICoinfairFactory(CoinfairFactoryAddress).setFeeToSetter(_feeToSetter);
     }
 
-    function setFeeTo(address _feeTo) external onlyCoinFair{
-        ICoinFairFactory(CoinFairFactoryAddress).setFeeTo(_feeTo);
+    function setFeeTo(address _feeTo) external onlyCoinfair{
+        ICoinfairFactory(CoinfairFactoryAddress).setFeeTo(_feeTo);
     }
 
-    function setFeeToWeight(uint8 _feeToWeight) external onlyCoinFair{
-        ICoinFairFactory(CoinFairFactoryAddress).setFeeToWeight(_feeToWeight);
+    function setFeeToWeight(uint8 _feeToWeight) external onlyCoinfair{
+        ICoinfairFactory(CoinfairFactoryAddress).setFeeToWeight(_feeToWeight);
     }
 
     // usr use
     function withdrawFee(address token)public override{
-        require(token != address(0),'CoinFairTreasury:ZERO');
-        uint waiting = CoinFairUsrTreasury[msg.sender][token];
-        require(waiting > 0,'CoinFairTreasury:ZERO AMOUNT');
+        require(token != address(0),'CoinfairTreasury:ZERO');
+        uint waiting = CoinfairUsrTreasury[msg.sender][token];
+        require(waiting > 0,'CoinfairTreasury:ZERO AMOUNT');
 
-        CoinFairUsrTreasury[msg.sender][token] = 0;
+        CoinfairUsrTreasury[msg.sender][token] = 0;
         emit WithdrawFee(token, msg.sender, waiting);
 
         TransferHelper.safeTransfer(token, msg.sender, waiting);
@@ -371,9 +371,9 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
     // lock
     // must approve pair to treasury first
     function lockLP(address pair, uint256 amount, uint256 time)public {
-        require(pair != address(0) && time > block.timestamp && amount > 0,'CoinFairTreasury:LOCK ERROR');
-        LPPrison storage lpPrison = CoinFairLPPrison[msg.sender][pair];
-        require(time > lpPrison.dischargedTime,'CoinFairTreasury:CANT REDUCE DISCHARGEDTIME');
+        require(pair != address(0) && time > block.timestamp && amount > 0,'CoinfairTreasury:LOCK ERROR');
+        LPPrison storage lpPrison = CoinfairLPPrison[msg.sender][pair];
+        require(time > lpPrison.dischargedTime,'CoinfairTreasury:CANT REDUCE DISCHARGEDTIME');
         bool isFirstTimeLock;
         if(lpPrison.pair == address(0)){
             lpPrison.pair = pair;
@@ -388,10 +388,10 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
     }
 
     function releaseLP(address pair)public {
-        require(pair != address(0),'CoinFairTreasury:RELEASE ERROR');
-        LPPrison storage lpPrison = CoinFairLPPrison[msg.sender][pair];
-        require(lpPrison.pair != address(0) && lpPrison.amount > 0,'CoinFairTreasury:NO LOCK LP');
-        require(lpPrison.dischargedTime <= block.timestamp,'CoinFairTreasury:TOO EARLY');
+        require(pair != address(0),'CoinfairTreasury:RELEASE ERROR');
+        LPPrison storage lpPrison = CoinfairLPPrison[msg.sender][pair];
+        require(lpPrison.pair != address(0) && lpPrison.amount > 0,'CoinfairTreasury:NO LOCK LP');
+        require(lpPrison.dischargedTime <= block.timestamp,'CoinfairTreasury:TOO EARLY');
 
         uint256 releaseAmount = lpPrison.amount;
 
@@ -407,7 +407,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
         require(path.length > 1);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
-                address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
+                address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                 if(pair == address(0)){continue;}
 
                 uint[] memory amountFee; uint[] memory amounts;
@@ -417,14 +417,14 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
                 uint[] memory feePath = new uint[](1); feePath[0] = fees[i];
 
                 if(isExactTokensForTokens){
-                    (amounts , amountFee) = ICoinFairWarmRouter(CoinFairWarmRouterAddress).getAmountsOut(amount, path, poolTypePath, feePath);
+                    (amounts , amountFee) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsOut(amount, path, poolTypePath, feePath);
                     if(amounts[1] > finalAmount){
                         finalAmount = amounts[1];
                         bestPoolType = swapN;
                         bestfee = fees[i];
                     }
                 }else{
-                    (amounts , amountFee) = ICoinFairWarmRouter(CoinFairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
+                    (amounts , amountFee) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
                     if(amounts[0] > finalAmount){
                         finalAmount = amounts[0];
                         bestPoolType = swapN;
@@ -443,19 +443,19 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
         usrPoolManagement[] memory UsrPoolManagement = new usrPoolManagement[](20);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
-                address pair = ICoinFairFactory(CoinFairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
+                address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                 if(pair == address(0)){continue;}
                 else{
-                    uint256 usrBal = ICoinFairPair(pair).balanceOf(usrAddr);
+                    uint256 usrBal = ICoinfairPair(pair).balanceOf(usrAddr);
                     if(usrBal != 0){
-                        (uint reserve0_, uint reserve1_, ) = ICoinFairPair(pair).getReserves();
+                        (uint reserve0_, uint reserve1_, ) = ICoinfairPair(pair).getReserves();
                         UsrPoolManagement[index].usrPair = pair;
-                        UsrPoolManagement[index].poolType = ICoinFairPair(pair).getPoolType();
-                        UsrPoolManagement[index].fee = ICoinFairPair(pair).getFee();
+                        UsrPoolManagement[index].poolType = ICoinfairPair(pair).getPoolType();
+                        UsrPoolManagement[index].fee = ICoinfairPair(pair).getFee();
                         UsrPoolManagement[index].reserve0 = reserve0_;
                         UsrPoolManagement[index].reserve1 = reserve1_;
                         UsrPoolManagement[index].usrBal = usrBal;
-                        UsrPoolManagement[index].totalSupply = ICoinFairPair(pair).totalSupply();
+                        UsrPoolManagement[index].totalSupply = ICoinfairPair(pair).totalSupply();
                         index = index + 1;
                     }
                 }

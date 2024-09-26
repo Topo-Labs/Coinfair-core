@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract CoinFairNFT is ERC721, Ownable{
+contract CoinfairNFT is ERC721, Ownable{
     using Address for address payable;
 
     mapping(address => address) public parentAddress;
@@ -27,21 +27,21 @@ contract CoinFairNFT is ERC721, Ownable{
     string public l2Uri = "";
     string public l3Uri = "";
 
-    address internal CoinFairAddr;
+    address internal CoinfairAddr;
 
     event Claim(address indexed minter, address indexed claimer);
 
-    modifier onlyCoinFair() {
-        require(msg.sender == CoinFairAddr,"CoinFairNFT:Only CoinFair");
+    modifier onlyCoinfair() {
+        require(msg.sender == CoinfairAddr,"CoinfairNFT:Only Coinfair");
         _;
     }
 
-    constructor() ERC721("CoinFairNFT", "CF_NFT") Ownable(msg.sender){
-        CoinFairAddr = msg.sender;
+    constructor() ERC721("CoinfairNFT", "CF_NFT") Ownable(msg.sender){
+        CoinfairAddr = msg.sender;
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public override {
-        require(from == address(this), "CoinFairNFT:SBT");
+        require(from == address(this), "CoinfairNFT:SBT");
         if (to == address(0)) {
             revert ERC721InvalidReceiver(address(0));
         }
@@ -53,7 +53,7 @@ contract CoinFairNFT is ERC721, Ownable{
     }
 
     function getMCInfo(address minter) public view returns(uint256,uint256){
-        require(totalMint[minter] >= waitingClaim[minter].length, "CoinFairNFT:Unexpected Error");
+        require(totalMint[minter] >= waitingClaim[minter].length, "CoinfairNFT:Unexpected Error");
         return (totalMint[minter] - waitingClaim[minter].length, totalMint[minter]);
     }
 
@@ -62,8 +62,8 @@ contract CoinFairNFT is ERC721, Ownable{
     }
 
     function mint(uint256 mintAmount) public payable{
-        require(msg.value >= mintAmount * mintCost, "CoinFairNFT:Incorrect ETH amount");
-        require (mintAmount > 0 && mintAmount <= maxMintAmount,"CoinFairNFT:Invalid mint amount");
+        require(msg.value >= mintAmount * mintCost, "CoinfairNFT:Incorrect ETH amount");
+        require (mintAmount > 0 && mintAmount <= maxMintAmount,"CoinfairNFT:Invalid mint amount");
 
         totalMint[msg.sender] += mintAmount;
 
@@ -83,10 +83,10 @@ contract CoinFairNFT is ERC721, Ownable{
         require((parentAddress[parent] != msg.sender) && 
             (parentAddress[parentAddress[parent]] != msg.sender) &&
             (parent != msg.sender)
-            , "CoinFairNFT:Loop inhibit");
-        require(msg.value >= claimCost, "CoinFairNFT:Incorrect ETH amount");
-        require(balanceOf(msg.sender) == 0 && parentAddress[msg.sender] == address(0), "CoinFairNFT:Already claimed");
-        require(waitingClaim[parent].length > 0,"CoinFairNFT:No remaining nft is available for collection");
+            , "CoinfairNFT:Loop inhibit");
+        require(msg.value >= claimCost, "CoinfairNFT:Incorrect ETH amount");
+        require(balanceOf(msg.sender) == 0 && parentAddress[msg.sender] == address(0), "CoinfairNFT:Already claimed");
+        require(waitingClaim[parent].length > 0,"CoinfairNFT:No remaining nft is available for collection");
 
         addrToNftId[msg.sender] = waitingClaim[parent][waitingClaim[parent].length - 1];
         waitingClaim[parent].pop();
@@ -101,15 +101,15 @@ contract CoinFairNFT is ERC721, Ownable{
         }
     }
 
-    function setLevel(address aimAddress, uint256 newLevel) public onlyCoinFair{
-        require(newLevel <= 2, "CoinFairNFT:Invalid new level");
+    function setLevel(address aimAddress, uint256 newLevel) public onlyCoinfair{
+        require(newLevel <= 2, "CoinfairNFT:Invalid new level");
         level[aimAddress] = newLevel;
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         address owner = ownerOf(tokenId);
         if (owner == address(this)) {
-            revert("CoinFairNFT:Not claimed");
+            revert("CoinfairNFT:Not claimed");
         }
 
         uint256 tokenLevel = level[parentAddress[owner]];
@@ -121,41 +121,41 @@ contract CoinFairNFT is ERC721, Ownable{
         }else if(tokenLevel == 2){
             return l3Uri;
         } else {
-            return "CoinFairNFT:Invalid level";
+            return "CoinfairNFT:Invalid level";
         }
 
     }
 
-    function setCoinFairAddr(address CoinFairAddr_) public onlyCoinFair {
-        CoinFairAddr = CoinFairAddr_;
+    function setCoinfairAddr(address CoinfairAddr_) public onlyCoinfair {
+        CoinfairAddr = CoinfairAddr_;
     }
 
-    function setL1Uri(string memory newUri) public onlyCoinFair {
+    function setL1Uri(string memory newUri) public onlyCoinfair {
         l1Uri = newUri;
     }
 
-    function setL2Uri(string memory newUri) public onlyCoinFair {
+    function setL2Uri(string memory newUri) public onlyCoinfair {
         l2Uri = newUri;
     }
 
-    function setL3Uri(string memory newUri) public onlyCoinFair {
+    function setL3Uri(string memory newUri) public onlyCoinfair {
         l3Uri = newUri;
     }
 
-    function setMintCost(uint256 newCost) public onlyCoinFair {
+    function setMintCost(uint256 newCost) public onlyCoinfair {
         mintCost = newCost;
     }
 
-    function setClaimCost(uint256 newCost) public onlyCoinFair {
+    function setClaimCost(uint256 newCost) public onlyCoinfair {
         claimCost = newCost;
     }
 
-    function setMaxMintAmount(uint256 newMaxMintAmount) public onlyCoinFair {
+    function setMaxMintAmount(uint256 newMaxMintAmount) public onlyCoinfair {
         maxMintAmount = newMaxMintAmount;
     }
 
-    function collectTreasury() public onlyCoinFair {
-        require(address(this).balance > 0, "CoinFairNFT:Zero ETH");
+    function collectTreasury() public onlyCoinfair {
+        require(address(this).balance > 0, "CoinfairNFT:Zero ETH");
         payable(msg.sender).sendValue(address(this).balance);
     }
 
