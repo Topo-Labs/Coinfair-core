@@ -3,29 +3,29 @@
 ## 最新合约地址&abi
 
 - CoinFairHotRouter：
-  - 0x5CFF1837978F962eF3beC6B666650fb26D1DB179
+  - 0x7f8465e2a416a876a1cD4DfD04E9D56294589b6b
 
 - CoinFairWarmRouter：
-  - 0xd5A318354EafB96103D74B0B8577a2C18532bd05
+  - 0xB9dd18ceDe54C551c0D2607d31f782C6b345FFa3
 
 - Factory：
-  - 0x5A5aeDBA5b459703bb6Fbb4AB3864590af7a3FAA
+  - 0x74b9F900B41cb4058159EF684c038Fa3665a92bc
 
 - Initcode：
   - 0xc2a43bb225edb416ed87ef24c79f1d7e61a99837edc8428668a94edf0b625acd
 
 - CoinFairTreasury：
-  - 0x2F5aD3465C4BC598Cb41d57C0c1E1D8fDEF26CCB
+  - 0x06be898892768725ffb0e2928f7aEA9bD6f6c6d2
 
 - CoinFairNFT：
-  - 0xCb4Fce1cD3Cfb35a8842d8E84A35f56348F73AE3
+  - 0x9954cFD6368734D9FD0BcA2Ab4756BA5C13848FD
 
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-25 23:00
+更新时间：9-26 15:20
 
 
 
@@ -143,6 +143,8 @@ path长度比poolTypePath和feePath长1
             uint reserve1;
             // 用户持有的lp代币数量
             uint256 usrBal;
+            // 总lp数量，用于计算share of the pool
+            uint256 totalSupply;
         }
     ```
 

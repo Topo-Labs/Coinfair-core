@@ -208,10 +208,10 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
         uint reserve0;
         uint reserve1;
         uint256 usrBal;
+        uint256 totalSupply;
     }
 
     uint8[4] public fees = [1, 3, 5, 10];
-
 
     // CoinFairUsrTreasury[owner][token]
     mapping(address => mapping(address => uint256))public CoinFairUsrTreasury;
@@ -448,6 +448,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
                         UsrPoolManagement[index].reserve0 = reserve0_;
                         UsrPoolManagement[index].reserve1 = reserve1_;
                         UsrPoolManagement[index].usrBal = usrBal;
+                        UsrPoolManagement[index].totalSupply = ICoinFairPair(pair).totalSupply();
                         index = index + 1;
                     }
                 }

@@ -390,6 +390,11 @@
 						"internalType": "uint256",
 						"name": "usrBal",
 						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalSupply",
+						"type": "uint256"
 					}
 				],
 				"internalType": "struct CoinFairV2Treasury.usrPoolManagement[]",
