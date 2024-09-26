@@ -252,6 +252,13 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "collectETH",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -358,6 +365,26 @@
 						"internalType": "address",
 						"name": "usrPair",
 						"type": "address"
+					},
+					{
+						"internalType": "uint8",
+						"name": "poolType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint256",
+						"name": "fee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reserve0",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reserve1",
+						"type": "uint256"
 					},
 					{
 						"internalType": "uint256",
