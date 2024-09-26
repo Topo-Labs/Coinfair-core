@@ -1,0 +1,35 @@
+specVersion: 1.0.0
+indexerHints:
+  prune: auto
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: CoinFairV2Treasury
+    network: base
+    source:
+      address: "0xA3a654488E8F92BF3eb6D7BAf8a0377e73FF136D"
+      abi: CoinFairV2Treasury
+      startBlock: 20275136
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - CollectFee
+        - LockLP
+        - ReleaseLP
+        - WithdrawFee
+      abis:
+        - name: CoinFairV2Treasury
+          file: ./abis/CoinFairV2Treasury.json
+      eventHandlers:
+        - event: CollectFee(indexed address,indexed address,uint256,indexed address)
+          handler: handleCollectFee
+        - event: LockLP(indexed address,indexed address,uint256,uint256,bool)
+          handler: handleLockLP
+        - event: ReleaseLP(indexed address,indexed address,uint256)
+          handler: handleReleaseLP
+        - event: WithdrawFee(indexed address,indexed address,uint256)
+          handler: handleWithdrawFee
+      file: ./src/coin-fair-v-2-treasury.ts

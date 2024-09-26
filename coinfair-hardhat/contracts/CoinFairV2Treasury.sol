@@ -215,6 +215,9 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
 
     // CoinFairUsrTreasury[owner][token]
     mapping(address => mapping(address => uint256))public CoinFairUsrTreasury;
+    // CoinFairUsrTreasuryTotal[owner][token]
+    mapping(address => mapping(address => uint256))public CoinFairUsrTreasuryTotal;
+    // CoinFairTotalTreasury[token]
     mapping(address => uint256)public CoinFairTotalTreasury;
 
     // CoinFairLPPrison[owner][token]
@@ -275,6 +278,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
             if(parentAddress != address(0)){
                 amount1 = amount.mul(parentAddressRatio) / 1000;
                 CoinFairUsrTreasury[parentAddress][token] = CoinFairUsrTreasury[parentAddress][token].add(amount1);
+                CoinFairUsrTreasuryTotal[parentAddress][token] = CoinFairUsrTreasuryTotal[parentAddress][token].add(amount1);
             }
 
             require(amount1 <= amount, 'CoinFairTreasury:COLLECTFEE ERROR2');
@@ -282,6 +286,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
             if(amount1 < amount){
                 amount3 = amount.sub(amount1);
                 CoinFairUsrTreasury[protocolFeeToAddress][token] = CoinFairUsrTreasury[protocolFeeToAddress][token].add(amount3);
+                CoinFairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinFairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
             }
         }else{
             uint amount1;
@@ -291,6 +296,7 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
             if(parentAddress != address(0)){
                 amount1 = amount.mul(parentAddressRatio) / 1000;
                 CoinFairUsrTreasury[parentAddress][token] = CoinFairUsrTreasury[parentAddress][token].add(amount1);
+                CoinFairUsrTreasuryTotal[parentAddress][token] = CoinFairUsrTreasuryTotal[parentAddress][token].add(amount1);
             }
 
             require(amount1.add(amount2) <= amount, 'CoinFairTreasury:COLLECTFEE ERROR2');
@@ -298,9 +304,10 @@ contract CoinFairV2Treasury is ICoinFairV2Treasury {
             if(amount1.add(amount2) < amount){
                 amount3 = amount.sub(amount1).sub(amount2);
                 CoinFairUsrTreasury[protocolFeeToAddress][token] = CoinFairUsrTreasury[protocolFeeToAddress][token].add(amount3);
+                CoinFairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinFairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
             }
             CoinFairUsrTreasury[projectCommunityAddress][token] = CoinFairUsrTreasury[projectCommunityAddress][token].add(amount2);
-
+            CoinFairUsrTreasuryTotal[projectCommunityAddress][token] = CoinFairUsrTreasuryTotal[projectCommunityAddress][token].add(amount2);
         }
         
         CoinFairTotalTreasury[token] = CoinFairTotalTreasury[token].add(amount);

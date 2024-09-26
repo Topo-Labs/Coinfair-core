@@ -2,6 +2,8 @@
 
 ## 最新合约地址&abi
 
+opbnb：
+
 - CoinFairHotRouter：
   - 0x7f8465e2a416a876a1cD4DfD04E9D56294589b6b
 
@@ -26,6 +28,35 @@
 
 
 更新时间：9-26 15:20
+
+
+
+base：
+
+- CoinFairHotRouter：
+  - 0xA583A12C94AEE7fD15CB35D657BA7363c725ef24
+
+- CoinFairWarmRouter：
+  - 0x7C422B9D1C57C565Cc6B65B607df0c1Ca1Dfa237
+
+- Factory：
+  - 0x43655722C23dd301fBecb7Ed846125942ff4581E
+
+- Initcode：
+  - 0xc2a43bb225edb416ed87ef24c79f1d7e61a99837edc8428668a94edf0b625acd
+
+- CoinFairTreasury：
+  - 0xA3a654488E8F92BF3eb6D7BAf8a0377e73FF136D
+
+- CoinFairNFT：
+  - 0x197e3C0dc6f5C18584989864945162631Ae832AE
+
+- abi
+  - https://github.com/Topo-Labs/CoinFair-v2.5-core
+
+
+
+更新时间：9-26 16:40
 
 
 

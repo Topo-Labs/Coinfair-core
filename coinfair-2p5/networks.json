@@ -1,0 +1,8 @@
+{
+  "base": {
+    "CoinFairV2Treasury": {
+      "address": "0xA3a654488E8F92BF3eb6D7BAf8a0377e73FF136D",
+      "startBlock": 20275136
+    }
+  }
+}
