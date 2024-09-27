@@ -121,6 +121,7 @@ base：
       - `false`：`TokensForExactTokens`
       - 具体是哪种可以参考接下来要调用的函数时`ExactTokensForTokens`还是`TokensForExactTokens`。
   - output：
+    - `address bestPair`：最优池子的pair
     - `uint8 bestPoolType`：最优池子的类型
     - `uint bestfee`：最优池子的手续费
     - `uint finalAmount`：最优池子能兑换出的数量
@@ -152,7 +153,7 @@ path长度比poolTypePath和feePath长1
 
 
 
-- `getPairManagement`：在流动性管理时，获取用户在指定两个代币下所有的pair地址和余额
+- `getPairManagement`：在流动性管理时，获取用户在指定两个代币下所有的pair数据
 
   - input
 
