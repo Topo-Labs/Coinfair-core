@@ -215,19 +215,21 @@ describe("Coinfair", function () {
 
         it("Should successfully all", async function(){
             const {usr, nft, treasury, factory, hot, warm, cf, usdt} = await loadFixture(deploy);
-
+            console.log(await treasury.getBestPool([cf, usdt], 1000000000000000000n, true));
             await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,1);
             await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,3);
             await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,5);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,10);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,1);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,3);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,5);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,10);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,1);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,3);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,5);
-            await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,10);
+            console.log(await treasury.getBestPool([cf, usdt], 1000000000000000000n, true));
+
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,1,10);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,1);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,3);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,5);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,2,10);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,1);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,3);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,5);
+            // await addLiquidity(warm,factory,usr,cf,usdt,160000000000000000000000000n,10000000000000000000000000n,4,10);
 
             await addLiquidity(
                 warm,
@@ -296,16 +298,20 @@ describe("Coinfair", function () {
             console.log("price0CumulativeLast: ",price0CumulativeLast);
             console.log("price1CumulativeLast: ",price1CumulativeLast);
 
+            const {bestPair, bestPoolType, bestfee, finalAmount, priceXperY} = await treasury.getBestPool([cf, usdt], 100000000000000000000000n, true);
+            
+            console.log(bestPair, bestPoolType, bestfee, finalAmount, priceXperY);
+
             await swap(
                 nft,
                 treasury,
                 hot,
                 factory,
                 usr,
-                1000000000000000000n,
+                100000000000000000000000n,
                 [cf, usdt],
-                [1],
-                [5]
+                [bestPoolType],
+                [bestfee]
             )
 
             await removeLiquidity(

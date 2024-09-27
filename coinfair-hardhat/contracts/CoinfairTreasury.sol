@@ -181,8 +181,26 @@ interface ICoinfairWarmRouter {
     function getAmountsIn(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath) external view returns (uint[] memory amounts,uint[] memory amountFees);
 }
 
+// a library for handling binary fixed point numbers (https://en.wikipedia.org/wiki/Q_(number_format))
+// range: [0, 2**112 - 1]
+// resolution: 1 / 2**112
+library UQ112x112 {
+    uint224 constant Q112 = 2**112;
+
+    // encode a uint112 as a UQ112x112
+    function encode(uint112 y) internal pure returns (uint224 z) {
+        z = uint224(y) * Q112; // never overflows
+    }
+
+    // divide a UQ112x112 by a uint112, returning a UQ112x112
+    function uqdiv(uint224 x, uint112 y) internal pure returns (uint224 z) {
+        z = x / uint224(y);
+    }
+}
+
 contract CoinfairTreasury is ICoinfairTreasury {
     using SafeMath for uint;
+    using UQ112x112 for uint224;
 
     string public constant AUTHORS = "Coinfair ON OPBNB";
 
@@ -406,21 +424,21 @@ contract CoinfairTreasury is ICoinfairTreasury {
     }
 
     // return the best pool among multiple pools under a specific value
-    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(address bestPair, uint8 bestPoolType, uint bestfee, uint finalAmount){
+    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(address bestPair, uint8 bestPoolType, uint bestfee, uint finalAmount, uint256 priceXperY){
         require(path.length > 1);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
                 // address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                 if(ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]) == address(0)){continue;}
 
-                uint[] memory amountFee; uint[] memory amounts;
+                uint[] memory amounts;
 
                 uint8[] memory poolTypePath = new uint8[](1); poolTypePath[0] = swapN;
 
                 uint[] memory feePath = new uint[](1); feePath[0] = fees[i];
 
                 if(isExactTokensForTokens){
-                    (amounts , amountFee) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsOut(amount, path, poolTypePath, feePath);
+                    (amounts,) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsOut(amount, path, poolTypePath, feePath);
                     if(amounts[1] > finalAmount){
                         finalAmount = amounts[1];
                         bestPoolType = swapN;
@@ -428,7 +446,7 @@ contract CoinfairTreasury is ICoinfairTreasury {
                         bestPair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                     }
                 }else{
-                    (amounts , amountFee) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
+                    (amounts,) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
                     if(amounts[0] > finalAmount){
                         finalAmount = amounts[0];
                         bestPoolType = swapN;
@@ -437,7 +455,22 @@ contract CoinfairTreasury is ICoinfairTreasury {
                     }
                 }
             }
+            if(bestPair != address(0)){
+                (priceXperY,) = calcPriceInstant(bestPair);
+            }
         }
+    }
+
+    function calcPriceInstant(address pair) internal view returns(uint256 priceXperY, uint256 priceYperX){
+        uint112 r0;
+        uint112 r1;
+        uint e0;
+        uint e1;
+        (r0, r1, ) = ICoinfairPair(pair).getReserves();
+        require(r0 > 0 && r1 > 0);
+        (e0, e1, ) = ICoinfairPair(pair).getExponents();
+        priceXperY = uint(UQ112x112.encode(r0).uqdiv(r1)) * e1 / e0;
+        priceYperX = uint(UQ112x112.encode(r1).uqdiv(r0)) * e0 / e1;
     }
 
     // return all pairs and balances belong to usr under the path

@@ -5,29 +5,29 @@
 opbnb：
 
 - CoinFairHotRouter：
-  - 0x93629a1e2999CCb8e121F9A85a49F681980B7a94
+  - 0xF981bfe1f60E7B11F88010c6C1d0b7D21C2E9698
 
 - CoinFairWarmRouter：
-  - 0xb8921397006577D6c8328bc2F3f7555b24F77166
+  - 0x1Fe366F88e1491A27EbbeC509d84Cc4BF2993720
 
 - Factory：
-  - 0xC8dbD64809371e0cfd0b0626101eF4Dd2f8f9974
+  - 0x97a65044C818472dd3ae475Dd93cADBaEE2eEcfc
 
 - Initcode：
   - 0x658d728f516cb1eab6bab3d31d53f3e93875199b7205dfadf722888528c6abad
 
 - CoinFairTreasury：
-  - 0xF86743cE5A48fdf1ec9B1b68CEAa0c7085252659
+  - 0x730f8c42e9aE56eC0719f88097138294915571bd
 
 - CoinFairNFT：
-  - 0xd06bD01F41761f96cb189Ea99c8e58f3671427f8
+  - 0xd4E58e5f5Ec6a6B9675206C2d002E551C83a3050
 
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-27 13:30
+更新时间：9-28 6:50
 
 
 
@@ -112,7 +112,15 @@ base：
 
 ## CoinFairV2Treasury
 
+- `calcPriceInstant`
+  - input:
+    - `address pair`：输入pair
+  - output:
+    - `uint256 priceXperY`：获取当前1个y能换多少x
+    - `uint256 priceYperX`：获取当前1个x能换多少y
+
 - `getBestPool`：在`tokenA`和`tokenB`组成的20个池子中，选择能兑换出最多代币的最优池子
+  
   - input：
     - `address[] memory path`：`[tokenA, tokenB]`，只能两个代币
     -  `uint amount`：输入数量
@@ -120,11 +128,26 @@ base：
       - `true`：`ExactTokensForTokens`
       - `false`：`TokensForExactTokens`
       - 具体是哪种可以参考接下来要调用的函数时`ExactTokensForTokens`还是`TokensForExactTokens`。
+    
   - output：
     - `address bestPair`：最优池子的pair
+    
     - `uint8 bestPoolType`：最优池子的类型
+    
     - `uint bestfee`：最优池子的手续费
+    
     - `uint finalAmount`：最优池子能兑换出的数量
+    
+    - `*uint256* priceXperY`：价格，带112精度，是交易前的价格
+    
+      ```
+      🌰：priceXperY = 2596148429267413814265248164610048n
+      那么当前价格为 2596148429267413814265248164610048n/2^112 = 0.5
+      假设pair中x是cf， y是usdt，则0.5代表：0.5 cf = usdt。另一个方向的价格求个倒数。
+      
+      ```
+    
+      <img src="https://p.ipic.vip/o646aj.png" alt="image-20240928065745210" style="zoom: 50%;" />
 
 ```
 🔴在执行swap时，首选获取用户输入的tokenA和tokenB
