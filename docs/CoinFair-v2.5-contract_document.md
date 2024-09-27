@@ -5,35 +5,35 @@
 opbnb：
 
 - CoinFairHotRouter：
-  - 0x7f8465e2a416a876a1cD4DfD04E9D56294589b6b
+  - 0x93629a1e2999CCb8e121F9A85a49F681980B7a94
 
 - CoinFairWarmRouter：
-  - 0xB9dd18ceDe54C551c0D2607d31f782C6b345FFa3
+  - 0xb8921397006577D6c8328bc2F3f7555b24F77166
 
 - Factory：
-  - 0x74b9F900B41cb4058159EF684c038Fa3665a92bc
+  - 0xC8dbD64809371e0cfd0b0626101eF4Dd2f8f9974
 
 - Initcode：
-  - 0xc2a43bb225edb416ed87ef24c79f1d7e61a99837edc8428668a94edf0b625acd
+  - 0x658d728f516cb1eab6bab3d31d53f3e93875199b7205dfadf722888528c6abad
 
 - CoinFairTreasury：
-  - 0x06be898892768725ffb0e2928f7aEA9bD6f6c6d2
+  - 0xF86743cE5A48fdf1ec9B1b68CEAa0c7085252659
 
 - CoinFairNFT：
-  - 0x9954cFD6368734D9FD0BcA2Ab4756BA5C13848FD
+  - 0xd06bD01F41761f96cb189Ea99c8e58f3671427f8
 
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-26 15:20
+更新时间：9-27 13:30
 
 
 
 base：
 
-部署地址：0x7eb9cfa85f4bfe5ffd352ec417ba9011d755a7c0
+部署钱包：0x7eb9cfa85f4bfe5ffd352ec417ba9011d755a7c0
 
 - CoinfairLibrary：
   - 0xa66e1d6c0888b314ad2355931172948e408dbfd0

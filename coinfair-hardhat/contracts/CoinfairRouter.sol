@@ -447,7 +447,7 @@ library CoinfairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'a1e9ea9cc3ace9eb678c30f2a79b594a424bf63222a19e1c2b088e3fa47e0f0f' // init code hash
+                hex'658d728f516cb1eab6bab3d31d53f3e93875199b7205dfadf722888528c6abad' // init code hash
             ))));
     }
 
@@ -635,6 +635,8 @@ pragma solidity =0.6.6;
 
 contract CoinfairWarmRouter is ICoinfairWarmRouter {
     using SafeMath for uint;
+
+    string public constant AUTHORS = "Coinfair ON OPBNB";
 
     address public immutable override factory;
     address public immutable override WETH;
@@ -914,6 +916,8 @@ pragma solidity =0.6.6;
 
 contract CoinfairHotRouter is ICoinfairHotRouter {
     using SafeMath for uint;
+
+    string public constant AUTHORS = "Coinfair ON OPBNB";
 
     address public immutable override factory;
     address public immutable override WETH;

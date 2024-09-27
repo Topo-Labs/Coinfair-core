@@ -2,6 +2,7 @@
 pragma experimental ABIEncoderV2;
 pragma solidity =0.6.6;
 
+
 // helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
 library TransferHelper {
 
@@ -182,6 +183,8 @@ interface ICoinfairWarmRouter {
 
 contract CoinfairTreasury is ICoinfairTreasury {
     using SafeMath for uint;
+
+    string public constant AUTHORS = "Coinfair ON OPBNB";
 
     address public CoinfairFactoryAddress;
     address public CoinfairNFTAddress;
@@ -403,12 +406,12 @@ contract CoinfairTreasury is ICoinfairTreasury {
     }
 
     // return the best pool among multiple pools under a specific value
-    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(uint8 bestPoolType, uint bestfee, uint finalAmount){
+    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(address bestPair, uint8 bestPoolType, uint bestfee, uint finalAmount){
         require(path.length > 1);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){
-                address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
-                if(pair == address(0)){continue;}
+                // address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
+                if(ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]) == address(0)){continue;}
 
                 uint[] memory amountFee; uint[] memory amounts;
 
@@ -422,6 +425,7 @@ contract CoinfairTreasury is ICoinfairTreasury {
                         finalAmount = amounts[1];
                         bestPoolType = swapN;
                         bestfee = fees[i];
+                        bestPair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                     }
                 }else{
                     (amounts , amountFee) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
@@ -429,9 +433,9 @@ contract CoinfairTreasury is ICoinfairTreasury {
                         finalAmount = amounts[0];
                         bestPoolType = swapN;
                         bestfee = fees[i];
+                        bestPair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
                     }
                 }
-
             }
         }
     }

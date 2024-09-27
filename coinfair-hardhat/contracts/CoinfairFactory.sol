@@ -282,6 +282,8 @@ contract CoinfairERC20 is ICoinfairERC20 {
 contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
+    
+    string public constant AUTHORS = "Coinfair ON OPBNB";
 
     uint public constant MINIMUM_LIQUIDITY = 10**3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
@@ -703,6 +705,8 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
 }
 
 contract CoinfairFactory is ICoinfairFactory {
+    string public constant AUTHORS = "Coinfair 0x7eB9CFa85f4BFe5Ffd352eC417bA9011d755a7c0";
+
     bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(CoinfairPair).creationCode));
     
     address public feeToSetter;
@@ -718,14 +722,14 @@ contract CoinfairFactory is ICoinfairFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint length, uint fee);
 
 
-    constructor(address _coinfairTreasury) public {
+    constructor(address _coinFairTreasury) public {
         feeToSetter = msg.sender;
-        feeTo = 0xEE89C7d5B07f163b613a7941eD4d1446FF0d6709;
+        feeTo = 0x7eB9CFa85f4BFe5Ffd352eC417bA9011d755a7c0;
         feeToWeight = 0;
 
         WETH = 0x4200000000000000000000000000000000000006;
 
-        CoinfairTreasury = _coinfairTreasury;
+        CoinfairTreasury = _coinFairTreasury;
     }
 
     function allPairsLength() external view returns (uint) {

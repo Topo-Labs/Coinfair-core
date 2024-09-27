@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract CoinfairNFT is ERC721, Ownable{
     using Address for address payable;
 
+    string public constant AUTHORS = "Coinfair ON OPBNB";
+
     mapping(address => address) public parentAddress;
 
     mapping(address => uint256) public level; 
