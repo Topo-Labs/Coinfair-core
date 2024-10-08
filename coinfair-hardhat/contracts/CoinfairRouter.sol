@@ -1,7 +1,6 @@
 // Mozilla Public License 2.0
 
 pragma solidity =0.6.6;
-
 // helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
 library TransferHelper {
     function safeApprove(address token, address to, uint value) internal {
@@ -447,7 +446,7 @@ library CoinfairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'5dec3f9c6e778123c4f0a1534ff725f31d8b5230498258f84eacd46821210253' // init code hash
+                hex'6670daff3b079f7d1c8de912b3177b5098543b96ea50d3a9b8a2f7d9b1a98970' // init code hash
             ))));
     }
 
@@ -479,11 +478,11 @@ library CoinfairLibrary {
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     // Based on the K conservation formula, when the amountIn A token is entered, how many B tokens need to be returned after deducting the service charge, and the result is rounded down
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountOut, uint amountOutFee) {
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool tokenDir) public pure returns (uint amountOut, uint amountOutFee) {
         require(amountIn > 0, 'CoinfairLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'CoinfairLibrary: INSUFFICIENT_LIQUIDITY');
-        if (exponentIn < exponentOut ||
-            (exponentIn == exponentOut && roolOver)){
+
+        if (exponentIn < exponentOut || (exponentIn == exponentOut && tokenDir)){
             // Round up the result of exp to make the output smaller
             uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
             uint256 amountInReal = amountIn.mul(uint256(1000).sub(fee))/1000;
@@ -495,7 +494,8 @@ library CoinfairLibrary {
             tmp = exp(tmp, 32, exponentOut).add(1); 
             amountOut = reserveOut.sub(tmp);
             amountOutFee = amountIn.sub(amountInReal);
-        }else{
+        }
+        else{
             // Round up the result of exp to make the output smaller
             uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
             // Here * 1000-ICoinfairFactory(factory).fee/1000 will be taken down to make the output smaller
@@ -508,17 +508,15 @@ library CoinfairLibrary {
             amountOut = amountOutTotal.mul(uint256(1000).sub(fee))/1000;
             amountOutFee = amountOutTotal.sub(amountOut);
         }
-        
-    }
 
+    }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
     // Based on the K conservation formula, if you want to replace the amountOut B token, how many A tokens need to be input when the service charge is included, and the result is rounded up
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool roolOver) public pure returns (uint amountIn, uint amountInFee) {
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint256 exponentIn, uint256 exponentOut, uint fee, bool tokenDir) public pure returns (uint amountIn, uint amountInFee) {
         require(amountOut > 0, 'CoinfairLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'CoinfairLibrary: INSUFFICIENT_LIQUIDITY');
-        if (exponentIn < exponentOut ||
-            (exponentIn == exponentOut && roolOver)){
+        if (exponentIn < exponentOut || (exponentIn == exponentOut && tokenDir)){
             // Round up the result of exp to make the input larger
             uint256 K = (exp(reserveIn, exponentIn, 32).add(1)).mul(exp(reserveOut, exponentOut, 32).add(1));
             // The exp result itself is rounded down, and the input becomes larger
@@ -543,6 +541,7 @@ library CoinfairLibrary {
             tmp = exp(tmp, 32, exponentIn).add(1);
             amountIn = tmp.sub(reserveIn);
             amountInFee = amountOutTotal.sub(amountOut);
+
         }
     }
 
@@ -560,7 +559,8 @@ library CoinfairLibrary {
             //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i], path[i + 1]);
             // uint _fee = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getFee();
             bool roolOver = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).getRoolOver();
-            (amounts[i + 1], amountsFee[i]) = getAmountOut(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i], roolOver);
+            bool tokenDir = roolOver == (ICoinfairPair(ICoinfairFactory(factory).getPair(path[i], path[i + 1], poolTypePath[i], feePath[i])).token0() == path[i]);
+            (amounts[i + 1], amountsFee[i]) = getAmountOut(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i], tokenDir);
         }
     }
 
@@ -577,7 +577,8 @@ library CoinfairLibrary {
             //(uint256 decimalsIn, uint256 decimalsOut) = getDecimals(path[i - 1], path[i]);
             // uint _fee = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getFee();
             bool roolOver = ICoinfairPair(ICoinfairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1],feePath[i - 1])).getRoolOver();
-            (amounts[i - 1], amountsFee[i - 1]) = getAmountIn(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i - 1], roolOver);
+            bool tokenDir = roolOver == (ICoinfairPair(ICoinfairFactory(factory).getPair(path[i - 1], path[i], poolTypePath[i - 1], feePath[i - 1])).token0() == path[i - 1]);
+            (amounts[i - 1], amountsFee[i - 1]) = getAmountIn(amounts[i], reserveIn, reserveOut, exponentIn, exponentOut, feePath[i - 1], tokenDir);
         }
     }
 }
@@ -636,7 +637,7 @@ pragma solidity =0.6.6;
 contract CoinfairWarmRouter is ICoinfairWarmRouter {
     using SafeMath for uint;
 
-    string public constant AUTHORS = "Coinfair ON OPBNB";
+    string public constant AUTHORS = "Coinfair";
 
     address public immutable override factory;
     address public immutable override WETH;
@@ -917,7 +918,7 @@ pragma solidity =0.6.6;
 contract CoinfairHotRouter is ICoinfairHotRouter {
     using SafeMath for uint;
 
-    string public constant AUTHORS = "Coinfair ON OPBNB";
+    string public constant AUTHORS = "Coinfair";
 
     address public immutable override factory;
     address public immutable override WETH;
@@ -1042,6 +1043,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
+
     function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         virtual
@@ -1059,6 +1061,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
         IWETH(WETH).withdraw(amounts[amounts.length - 1]);
         TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
     }
+
     function swapETHForExactTokens(uint amountOut, address[] calldata path, uint8[] calldata poolTypePath, uint[] calldata feePath, address to, uint deadline)
         external
         virtual
@@ -1087,16 +1090,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
             ICoinfairPair pair = ICoinfairPair(CoinfairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]));
             
             (uint amountOutput,uint amountFee) = _swapSupportingFeeOnTransferTokensAssist(pair, path[i], token0, pair.getFee(), pair.getRoolOver());
-            // { // scope to avoid stack too deep errors
-            // (uint reserve0, uint reserve1,) = pair.getReserves();
-            // (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-            // amountInput = IERC20(path[i]).balanceOf(address(pair)).sub(reserveInput);
-            // (uint256 exponent0, uint256 exponent1,) = pair.getExponents();
-            // (uint256 exponentA, uint256 exponentB) = input == token0 ? (exponent0, exponent1) : (exponent1, exponent0);
-            // //(uint256 decimalsA, uint256 decimalsB) = (IERC20(input).decimals(), IERC20(output).decimals());
-            // // uint _fee = ICoinfairFactory(factory).getfee(path[i], path[i + 1]);
-            // (amountOutput, amountFee) = CoinfairLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, exponentA, exponentB,pair.getFee());
-            // }
+
             (uint amount0Out, uint amount1Out) = path[i] == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
             address to = i < path.length - 2 ? CoinfairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;
             pair.swap(amount0Out, amount1Out, amountFee , to, new bytes(0));

@@ -200,17 +200,14 @@ library UQ112x112 {
 
 contract CoinfairTreasury is ICoinfairTreasury {
     using SafeMath for uint;
-    using UQ112x112 for uint224;
 
-    string public constant AUTHORS = "Coinfair ON OPBNB";
+    string public constant AUTHORS = "Coinfair";
 
     address public CoinfairFactoryAddress;
     address public CoinfairNFTAddress;
     address public CoinfairWarmRouterAddress;
 
     address public Coinfair;
-
-    bool public setDEXAddressLock;
 
     uint public parentAddressLevel1Ratio = 300;
     uint public parentAddressLevel2Ratio = 400;
@@ -221,18 +218,6 @@ contract CoinfairTreasury is ICoinfairTreasury {
         uint256 amount;
         uint256 dischargedTime;
     }
-
-    struct usrPoolManagement{
-        address usrPair;
-        uint8 poolType;
-        uint fee;
-        uint reserve0;
-        uint reserve1;
-        uint256 usrBal;
-        uint256 totalSupply;
-    }
-
-    uint8[4] public fees = [1, 3, 5, 10];
 
     // CoinfairUsrTreasury[owner][token]
     mapping(address => mapping(address => uint256))public CoinfairUsrTreasury;
@@ -266,12 +251,10 @@ contract CoinfairTreasury is ICoinfairTreasury {
         require(_CoinfairFactoryAddress != address(0) && 
                 _CoinfairNFTAddress != address(0) &&
                 _CoinfairWarmRouterAddress != address(0), 'CoinfairTreasury:ZERO');
-        require(setDEXAddressLock == false,'CoinfairTreasury:Already set DEXAddress');
 
         CoinfairFactoryAddress = _CoinfairFactoryAddress;
         CoinfairNFTAddress = _CoinfairNFTAddress;
         CoinfairWarmRouterAddress = _CoinfairWarmRouterAddress;
-        setDEXAddressLock = true;
     }
 
     // Receive the eth accidentally entered into the contract
@@ -386,7 +369,7 @@ contract CoinfairTreasury is ICoinfairTreasury {
         CoinfairUsrTreasury[msg.sender][token] = 0;
         emit WithdrawFee(token, msg.sender, waiting);
 
-        TransferHelper.safeTransfer(token, msg.sender, waiting);
+        TransferHelper.safeTransfer(token, msg.sender, waiting);  
     }
 
     // lock
@@ -422,9 +405,37 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
         TransferHelper.safeTransfer(pair, msg.sender, releaseAmount);
     }
+}
+
+contract CoinfairView {
+    using SafeMath for uint;
+    using UQ112x112 for uint224;
+
+    address public CoinfairFactoryAddress;
+    address public CoinfairWarmRouterAddress;
+
+    string public constant AUTHORS = "Coinfair";
+
+    struct usrPoolManagement{
+        address usrPair;
+        uint8 poolType;
+        uint fee;
+        uint reserve0;
+        uint reserve1;
+        uint256 usrBal;
+        uint256 totalSupply;
+    }
+
+    uint8[4] public fees = [1, 3, 5, 10];
+
+    constructor(address _warm, address _fac) public{
+        CoinfairFactoryAddress = _fac;
+        CoinfairWarmRouterAddress = _warm;
+    }
 
     // return the best pool among multiple pools under a specific value
-    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(address bestPair, uint8 bestPoolType, uint bestfee, uint finalAmount, uint256 priceXperY){
+    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(
+        address bestPair, uint8 bestPoolType, uint bestfee, uint finalAmount, uint256 priceXperY){
         require(path.length > 1);
         for(uint8 swapN = 1;swapN < 5;swapN++){
             for(uint i = 0;i < 4;i++){

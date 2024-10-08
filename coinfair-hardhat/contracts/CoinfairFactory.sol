@@ -1,7 +1,6 @@
 
 // Mozilla Public License 2.0
 pragma solidity =0.5.16;
-
 library TransferHelper {
     function safeApprove(address token, address to, uint value) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
@@ -193,7 +192,7 @@ interface ICoinfairTreasury {
 
     function withdrawFee(address token) external;
 
-    function setRatio(uint newParentAddressRatio, uint newProjectCommunityAddressRatio) external;
+    function setRatio(uint, uint , uint) external;
 
     function setProjectCommunityAddress(address pair, address newProjectCommunityAddress) external;
 
@@ -283,7 +282,7 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
     
-    string public constant AUTHORS = "Coinfair ON OPBNB";
+    string public constant AUTHORS = "Coinfair";
 
     uint public constant MINIMUM_LIQUIDITY = 10**3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
@@ -348,6 +347,7 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
 
     function setRoolOver(bool _roolOver)public {
         require(msg.sender == CoinfairTreasury,'Coinfair : REFUSE');
+        require(exponent0 == exponent1, 'Coinfair:Error Pool');
         roolOver = _roolOver;
     }
 
@@ -660,7 +660,6 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         // uint amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
         // uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
         require(( balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0) > 0 || (balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0) > 0, 'Coinfair: INSUFFICIENT_INPUT_AMOUNT');
-        
         { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
         require(exp(balance0, exponent0, 32).mul(exp(balance1, exponent1, 32)) >= 
             exp(_reserve0, exponent0, 32).mul(exp(_reserve1, exponent1, 32)), 'Coinfair: K');
@@ -674,15 +673,13 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         address _token1 = token1;
         require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
 
-        // pay fee to CoinfairTreasury
-        if(exponent0 == 32 && exponent1 == 32 && roolOver){
+        if(exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)){
             TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
             ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
         }else{
             TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
             ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
         }
-
         if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
         if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
 
@@ -705,7 +702,7 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
 }
 
 contract CoinfairFactory is ICoinfairFactory {
-    string public constant AUTHORS = "Coinfair 0x7eB9CFa85f4BFe5Ffd352eC417bA9011d755a7c0";
+    string public constant AUTHORS = "Coinfair";
 
     bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(CoinfairPair).creationCode));
     
