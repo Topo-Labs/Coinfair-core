@@ -20,7 +20,7 @@
 - **CoinFairNFT**:
   - 0x729B7D8562a8f95AD10AD3a68D8bE5a91932296b
 - **ABI**:
-  - https://github.com/Topo-Labs/CoinFair-v2.5-core
+  - https://github.com/Topo-Labs/Coinfair-core
 
 Last updated: 10-9 3:20
 
@@ -49,7 +49,7 @@ Last updated: 10-9 3:20
   - 0xbbD06F6B432B45F9A12c2fa293e1A65ABeD3c9E1
   - https://basescan.org/address/0xbbD06F6B432B45F9A12c2fa293e1A65ABeD3c9E1
 - **ABI**:
-  - https://github.com/Topo-Labs/CoinFair-v2.5-core
+  - https://github.com/Topo-Labs/Coinfair-core
 
 Last updated: 9-27 4:40
 
@@ -128,8 +128,6 @@ Last updated: 9-27 4:40
     This means the current price is 2596148429267413814265248164610048n / 2^112 = 0.5.
     Assuming x is cf and y is usdt, 0.5 represents that 0.5 cf = 1 usdt. The reverse price is the reciprocal.
     ```
-
-    <img src="https://p.ipic.vip/o646aj.png" alt="image-20240928065745210" style="zoom:50%;"/>
 
 ```
 🔴 When performing swaps, always obtain the best pool for tokenA and tokenB first.
