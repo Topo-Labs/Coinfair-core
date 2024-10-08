@@ -1,4 +1,4 @@
-# Coinfair-core
+# Coinfair-core-v2
 
 ## How TO Deploy
 1. DEPLOY treasury

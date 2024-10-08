@@ -1,4 +1,4 @@
-# CoinFair-v2.5-合约文档
+# CoinFair-core-v2 合约文档
 
 ## 最新合约地址&abi
 
