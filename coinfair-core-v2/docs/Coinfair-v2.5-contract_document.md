@@ -4,30 +4,27 @@
 
 opbnb：
 
+- CoinfairLibrary：
+  - 0x9cd68fb2a51792927e6c8e25a71bb3e4e2e1eff3
+
 - CoinFairHotRouter：
-  - 0xF981bfe1f60E7B11F88010c6C1d0b7D21C2E9698
-
+  - 0x477De57C348168f84B456934f1F6C76eb6c4734b
 - CoinFairWarmRouter：
-  - 0x1Fe366F88e1491A27EbbeC509d84Cc4BF2993720
-
+  - 0x4F46010eD9E92075B36c2a656e4828d9B22ff6CD
 - Factory：
-  - 0x97a65044C818472dd3ae475Dd93cADBaEE2eEcfc
-
+  - 0x837A7dBb71aa66f155642d619c08f5C11e73dCe8
 - Initcode：
-  - 0x658d728f516cb1eab6bab3d31d53f3e93875199b7205dfadf722888528c6abad
-
+  - 0x33452d76f30738d058c15cb9e9f2547a7085b5c3c4090d0806ba0c58520a5d7e
 - CoinFairTreasury：
-  - 0x730f8c42e9aE56eC0719f88097138294915571bd
-
+  - 0xB49a81Ce0F950Fa00910d73309F996CA6CEC3575
 - CoinFairNFT：
-  - 0xd4E58e5f5Ec6a6B9675206C2d002E551C83a3050
-
+  - 0x729B7D8562a8f95AD10AD3a68D8bE5a91932296b
 - abi
   - https://github.com/Topo-Labs/CoinFair-v2.5-core
 
 
 
-更新时间：9-28 6:50
+更新时间：10-9 3:20
 
 
 
@@ -117,7 +114,7 @@ base：
     - `address pair`：输入pair
   - output:
     - `uint256 priceXperY`：获取当前1个y能换多少x
-    - `uint256 priceYperX`：获取当前1个x能换多少y
+    - `uint256 priceYperX`：获取当前1个x能换
 
 - `getBestPool`：在`tokenA`和`tokenB`组成的20个池子中，选择能兑换出最多代币的最优池子
   
