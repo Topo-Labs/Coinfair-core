@@ -20,7 +20,7 @@ opbnb：
 - CoinFairNFT：
   - 0x729B7D8562a8f95AD10AD3a68D8bE5a91932296b
 - abi
-  - https://github.com/Topo-Labs/CoinFair-v2.5-core
+  - https://github.com/Topo-Labs/Coinfair-core
 
 
 
@@ -53,7 +53,7 @@ base：
   - 0xbbD06F6B432B45F9A12c2fa293e1A65ABeD3c9E1
   - https://basescan.org/address/0xbbD06F6B432B45F9A12c2fa293e1A65ABeD3c9E1
 - abi
-  - https://github.com/Topo-Labs/CoinFair-v2.5-core
+  - https://github.com/Topo-Labs/Coinfair-core
 
 
 
