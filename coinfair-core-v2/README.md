@@ -7,4 +7,4 @@
 4. DEPLOY warmrouter AND DEPLOY hotrouter
 5. USE setHotRouterAddress SETTING hotrouter IN factory
 6. DEPLOY nft
-7. USE setDEXAddress SETTING factory/nft/warmrouter IN treasury
+7. USE setDEXAddress SETTING factory/nft IN treasury
