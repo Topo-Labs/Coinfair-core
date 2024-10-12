@@ -167,7 +167,7 @@ interface ICoinfairTreasury {
 
     function withdrawFee(address token) external;
 
-    function setRatio(uint, uint , uint) external;
+    function setRatio(uint, uint , uint, uint, uint) external;
 
     function setProjectCommunityAddress(address pair, address newProjectCommunityAddress) external;
 
@@ -205,12 +205,13 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
     address public CoinfairFactoryAddress;
     address public CoinfairNFTAddress;
-    address public CoinfairWarmRouterAddress;
 
     address public Coinfair;
 
     uint public parentAddressLevel1Ratio = 300;
     uint public parentAddressLevel2Ratio = 400;
+    uint public grandParentAddressLevel1Ratio = 0;
+    uint public grandParentAddressLevel2Ratio = 0;
     uint public projectCommunityAddressRatio = 400;
 
     struct LPPrison{
@@ -241,98 +242,99 @@ contract CoinfairTreasury is ICoinfairTreasury {
     }
 
     constructor()public{
-        require(parentAddressLevel2Ratio > parentAddressLevel1Ratio && 
-        parentAddressLevel2Ratio.add(projectCommunityAddressRatio) < 1000, 'CoinfairTreasury:ERROR DEPLOYER');
+        require(parentAddressLevel2Ratio >= parentAddressLevel1Ratio && grandParentAddressLevel2Ratio >= grandParentAddressLevel1Ratio
+        && parentAddressLevel2Ratio.add(projectCommunityAddressRatio) <= 1000, 'CoinfairTreasury:ERROR DEPLOYER');
         Coinfair = msg.sender;
     }
 
     // init only once
-    function setDEXAddress(address _CoinfairFactoryAddress, address _CoinfairNFTAddress, address _CoinfairWarmRouterAddress)public onlyCoinfair{
+    function setDEXAddress(address _CoinfairFactoryAddress, address _CoinfairNFTAddress)public onlyCoinfair{
         require(_CoinfairFactoryAddress != address(0) && 
-                _CoinfairNFTAddress != address(0) &&
-                _CoinfairWarmRouterAddress != address(0), 'CoinfairTreasury:ZERO');
+                _CoinfairNFTAddress != address(0), 'CoinfairTreasury:ZERO');
 
         CoinfairFactoryAddress = _CoinfairFactoryAddress;
         CoinfairNFTAddress = _CoinfairNFTAddress;
-        CoinfairWarmRouterAddress = _CoinfairWarmRouterAddress;
-    }
-
-    // Receive the eth accidentally entered into the contract
-    function collectETH() public onlyCoinfair {
-        require(address(this).balance > 0, "CoinfairTreasury:Zero ETH");
-       TransferHelper.sendValue(payable(msg.sender), address(this).balance);
     }
 
     // usually called by factory, 'approve' operate in factory and 'transfer' operate in treasury
     function collectFee(address token, address owner, uint amount, address pair)public override{
         require(token != address(0) && owner != address(0) && amount > 0 && pair != address(0),'CoinfairTreasury:COLLECTFEE ERROR');
-        // require(msg.sender == CoinfairFactoryAddress,'CoinfairTreasury:NOT FACTORY');
-        (address parentAddress,) = ICoinfairNFT(CoinfairNFTAddress).getTwoParentAddress(owner);
         address protocolFeeToAddress = ICoinfairFactory(CoinfairFactoryAddress).feeTo();
+        require(protocolFeeToAddress != address(0), 'CoinfairTreasury:FeeTo Is ZERO');
         address projectCommunityAddress = ICoinfairPair(pair).getProjectCommunityAddress();
 
-        require(protocolFeeToAddress != address(0), 'CoinfairTreasury:FeeTo Is ZERO');
-        uint parentAddressRatio = ICoinfairNFT(CoinfairNFTAddress).level(parentAddress) == 0 ?
-        parentAddressLevel1Ratio : parentAddressLevel2Ratio;
+        uint256 amountBefore = IERC20(token).balanceOf(address(this));
+        TransferHelper.safeTransferFrom(token, msg.sender, address(this), amount);
+        amount = IERC20(token).balanceOf(address(this)).sub(amountBefore);
 
         if(projectCommunityAddress == address(0)){
-            uint amount1;
-            uint amount3;
+            // parent
+            uint amount1 = _parentCollectFee(token, owner, amount);
+            // FeeTo
+            uint amount3 = amount.sub(amount1);
 
-            if(parentAddress != address(0)){
-                amount1 = amount.mul(parentAddressRatio) / 1000;
-                CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(amount1);
-                CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(amount1);
-            }
+            CoinfairUsrTreasury[protocolFeeToAddress][token] = CoinfairUsrTreasury[protocolFeeToAddress][token].add(amount3);
+            CoinfairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinfairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
 
-            require(amount1 <= amount, 'CoinfairTreasury:COLLECTFEE ERROR2');
-
-            if(amount1 < amount){
-                amount3 = amount.sub(amount1);
-                CoinfairUsrTreasury[protocolFeeToAddress][token] = CoinfairUsrTreasury[protocolFeeToAddress][token].add(amount3);
-                CoinfairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinfairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
-            }
         }else{
-            uint amount1;
+            // parent
+            uint amount1 = _parentCollectFee(token, owner, amount);
+            // community
             uint amount2 = amount.mul(projectCommunityAddressRatio) / 1000;
-            uint amount3;
+            // FeeTo
+            uint amount3 = amount.sub(amount1).sub(amount2);
 
-            if(parentAddress != address(0)){
-                amount1 = amount.mul(parentAddressRatio) / 1000;
-                CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(amount1);
-                CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(amount1);
-            }
+            CoinfairUsrTreasury[protocolFeeToAddress][token] = CoinfairUsrTreasury[protocolFeeToAddress][token].add(amount3);
+            CoinfairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinfairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
 
-            require(amount1.add(amount2) <= amount, 'CoinfairTreasury:COLLECTFEE ERROR2');
-
-            if(amount1.add(amount2) < amount){
-                amount3 = amount.sub(amount1).sub(amount2);
-                CoinfairUsrTreasury[protocolFeeToAddress][token] = CoinfairUsrTreasury[protocolFeeToAddress][token].add(amount3);
-                CoinfairUsrTreasuryTotal[protocolFeeToAddress][token] = CoinfairUsrTreasuryTotal[protocolFeeToAddress][token].add(amount3);
-            }
             CoinfairUsrTreasury[projectCommunityAddress][token] = CoinfairUsrTreasury[projectCommunityAddress][token].add(amount2);
             CoinfairUsrTreasuryTotal[projectCommunityAddress][token] = CoinfairUsrTreasuryTotal[projectCommunityAddress][token].add(amount2);
         }
         
         CoinfairTotalTreasury[token] = CoinfairTotalTreasury[token].add(amount);
+        
         emit CollectFee(token, owner, amount, pair);
+    }
 
-        TransferHelper.safeTransferFrom(token, msg.sender, address(this), amount);
+    function _parentCollectFee(address token, address owner, uint amount) internal returns(uint amount1){
+        (address parentAddress,address grandParentAddress) = ICoinfairNFT(CoinfairNFTAddress).getTwoParentAddress(owner);
+        uint amount10;
+        uint amount11;
+        if(parentAddress != address(0)){
+            uint parentAddressRatio = ICoinfairNFT(CoinfairNFTAddress).level(parentAddress) == 0 ?
+                                        parentAddressLevel1Ratio : parentAddressLevel2Ratio;
+            amount10 = amount.mul(parentAddressRatio) / 1000;
+            CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(amount10);
+            CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(amount10);
+        }
+
+        if(grandParentAddress != address(0)){
+            uint grandParentAddressRatio = ICoinfairNFT(CoinfairNFTAddress).level(grandParentAddress) == 0 ?
+                                        grandParentAddressLevel1Ratio : grandParentAddressLevel2Ratio;
+            amount11 = amount.mul(grandParentAddressRatio) / 1000;
+            CoinfairUsrTreasury[grandParentAddress][token] = CoinfairUsrTreasury[grandParentAddress][token].add(amount11);
+            CoinfairUsrTreasuryTotal[grandParentAddress][token] = CoinfairUsrTreasuryTotal[grandParentAddress][token].add(amount11);
+        }
+
+        amount1 = amount11.add(amount11);
     }
 
     // set three ratio to divide dex fee
-    function setRatio(uint newParentAddressLevel1Ratio, uint newParentAddressLevel2Ratio, uint newProjectCommunityAddressRatio)public override onlyCoinfair{
-        require(newParentAddressLevel2Ratio > newParentAddressLevel1Ratio && 
-            newParentAddressLevel2Ratio.add(newProjectCommunityAddressRatio) <= 1000);
+    function setRatio(uint newParentAddressLevel1Ratio, uint newParentAddressLevel2Ratio, uint newProjectCommunityAddressRatio, 
+                        uint newGrandParentAddressLevel1Ratio, uint newGrandParentAddressLevel2Ratio)public override onlyCoinfair{
+        require(newParentAddressLevel2Ratio >= newParentAddressLevel1Ratio && newGrandParentAddressLevel2Ratio >= newGrandParentAddressLevel1Ratio
+           && newParentAddressLevel2Ratio.add(newProjectCommunityAddressRatio).add(newGrandParentAddressLevel2Ratio) <= 1000);
 
         parentAddressLevel1Ratio = newParentAddressLevel1Ratio;
         parentAddressLevel2Ratio = newParentAddressLevel2Ratio;
+        grandParentAddressLevel1Ratio = newGrandParentAddressLevel1Ratio;
+        grandParentAddressLevel2Ratio = newGrandParentAddressLevel2Ratio;
         projectCommunityAddressRatio = newProjectCommunityAddressRatio;
     }
 
     // set a project's community address
     function setProjectCommunityAddress(address pair, address newProjectCommunityAddress)public override{
-        require(msg.sender == Coinfair || msg.sender == CoinfairWarmRouterAddress,'CoinfairTreasury:ERROR OPERATOR');
+        require(msg.sender == Coinfair || msg.sender == CoinfairFactoryAddress,'CoinfairTreasury:ERROR OPERATOR');
         require(newProjectCommunityAddress != address(0),'CoinfairTreasury:ZERO');
         ICoinfairPair(pair).setProjectCommunityAddress(newProjectCommunityAddress);
     }
@@ -405,7 +407,19 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
         TransferHelper.safeTransfer(pair, msg.sender, releaseAmount);
     }
+    
+    // Receive the eth accidentally entered into the contract
+    function collectETH() public onlyCoinfair {
+        require(address(this).balance > 0, "CoinfairTreasury:Zero ETH");
+       TransferHelper.sendValue(payable(msg.sender), address(this).balance);
+    }
+
+    receive() external payable {}
+
+
+
 }
+
 
 contract CoinfairView {
     using SafeMath for uint;

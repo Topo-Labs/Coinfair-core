@@ -192,7 +192,7 @@ interface ICoinfairTreasury {
 
     function withdrawFee(address token) external;
 
-    function setRatio(uint, uint , uint) external;
+    function setRatio(uint, uint , uint, uint, uint) external;
 
     function setProjectCommunityAddress(address pair, address newProjectCommunityAddress) external;
 
@@ -407,7 +407,9 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'Coinfair: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-        if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {
+        // 4_294_967_295 = 2**32 - 1
+        if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0 && 
+            timeElapsed < (_exponent0 > _exponent1 ?(4_294_967_295 / _exponent0 * _exponent1) : (4_294_967_295 / _exponent1 * _exponent0))) {
             // * never overflows, and + overflow is desired
             price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed * _exponent0 / _exponent1;
             price1CumulativeLast += uint(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed * _exponent1 / _exponent0;
@@ -740,11 +742,12 @@ contract CoinfairFactory is ICoinfairFactory {
         require(token0 != address(0), 'Coinfair: ZERO_ADDRESS');
 
         uint8 poolType;
-        if(exponentA == 32 && exponentB == 32){poolType = 1;}
-        else if (exponentA == 32 && exponentB == 8){poolType = 2;}
-        else if (exponentA == 8 && exponentB == 32){poolType = 3;}
-        else if (exponentA == 32 && exponentB == 1){poolType = 4;}
-        else if (exponentA == 1 && exponentB == 32){poolType = 5;}
+        if(exponent0 == 32 && exponent1 == 32){poolType = 1;}
+        else if (exponent0 == 32 && exponent1 == 8){poolType = 2;}
+        else if (exponent0 == 8 && exponent1 == 32){poolType = 3;}
+        else if (exponent0 == 32 && exponent1 == 1){poolType = 4;}
+        else if (exponent0 == 1 && exponent1 == 32){poolType = 5;}
+        else{revert();}
  
         require(getPair[token0][token1][poolType][fee] == address(0), 'Coinfair: PAIR_EXISTS'); // single check is sufficient
         bytes memory bytecode = type(CoinfairPair).creationCode;
@@ -758,6 +761,9 @@ contract CoinfairFactory is ICoinfairFactory {
         getPair[token0][token1][poolType][fee] = pair;
         getPair[token1][token0][poolType][fee] = pair; // populate mapping in the reverse direction
         allPairs.push(pair);
+
+        // Set the first address added liquidity to CommunityAddress
+        ICoinfairTreasury(CoinfairTreasury).setProjectCommunityAddress(pair, msg.sender);
 
         emit PairCreated(token0, token1, pair, allPairs.length,fee);
 

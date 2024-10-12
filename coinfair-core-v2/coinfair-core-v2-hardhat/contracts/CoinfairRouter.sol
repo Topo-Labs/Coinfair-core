@@ -446,7 +446,7 @@ library CoinfairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'6670daff3b079f7d1c8de912b3177b5098543b96ea50d3a9b8a2f7d9b1a98970' // init code hash
+                hex'5bb4f9bd616fbb29bf9d6f256886f0718ff0ac58013655ca76bbd1937814430a' // init code hash
             ))));
     }
 
@@ -621,7 +621,7 @@ interface ICoinfairTreasury {
 
     function withdrawFee(address token) external;
 
-    function setRatio(uint, uint , uint) external;
+    function setRatio(uint, uint , uint, uint, uint) external;
 
     function setProjectCommunityAddress(address pair, address newProjectCommunityAddress) external;
 
@@ -658,7 +658,7 @@ contract CoinfairWarmRouter is ICoinfairWarmRouter {
     }
 
     // **** ADD LIQUIDITY ****
-    // cmd = abi.encode(tokenA, tokenB, exponentA, exponentB)
+    // cmd = abi.encode(tokenA, tokenB, exponentA, exponentB, _fee)
     function _addLiquidity(
         bytes memory _addLiquidityCmd,
         uint amountADesired,
@@ -697,11 +697,7 @@ contract CoinfairWarmRouter is ICoinfairWarmRouter {
         else if (exponentA == 1 && exponentB == 32){poolType = 5;}
         // create the pair if it doesn't exist yet
         if (ICoinfairFactory(factory).getPair(tokenA, tokenB, poolType, _fee) == address(0)) {
-            ICoinfairFactory(factory).createPair(tokenA, tokenB,exponentA,exponentB,_fee);
-            // Set the first address added liquidity to CommunityAddress
-            ICoinfairTreasury(ICoinfairFactory(factory).CoinfairTreasury()).setProjectCommunityAddress(
-                ICoinfairFactory(factory).getPair(tokenA, tokenB, poolType, _fee),
-                msg.sender);
+            ICoinfairFactory(factory).createPair(tokenA, tokenB, exponentA, exponentB, _fee);
         }
         (reserveA, reserveB) = CoinfairLibrary.getReserves(factory, tokenA, tokenB, poolType, _fee);
     }
@@ -1089,7 +1085,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
             (address token0,) = CoinfairLibrary.sortTokens(path[i], path[i + 1]);
             ICoinfairPair pair = ICoinfairPair(CoinfairLibrary.pairFor(factory, path[i], path[i + 1], poolTypePath[i], feePath[i]));
             
-            (uint amountOutput,uint amountFee) = _swapSupportingFeeOnTransferTokensAssist(pair, path[i], token0, pair.getFee(), pair.getRoolOver());
+            (uint amountOutput,uint amountFee) = _swapSupportingFeeOnTransferTokensAssist(pair, path[i], token0, pair.getFee(), pair.getRoolOver() == (path[i] == token0));
 
             (uint amount0Out, uint amount1Out) = path[i] == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
             address to = i < path.length - 2 ? CoinfairLibrary.pairFor(factory, path[i + 1], path[i + 2], poolTypePath[i + 1], feePath[i + 1]) : _to;

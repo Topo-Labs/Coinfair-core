@@ -66,8 +66,7 @@ describe("Coinfair", function () {
 
         await treasury.setDEXAddress(
             factory.target,
-            nft.target,
-            warm.target
+            nft.target
         )
 
         const StandardToken= await hre.ethers.getContractFactory("StandardToken");
@@ -134,6 +133,74 @@ describe("Coinfair", function () {
         console.log("removeLiquidity transfered: ",await token1.name(),":",(usrBalBefore2 - usrBalAfter2));
         console.log("liquidity after remove: ", await pairContract.balanceOf(usr[0]));
         console.log("\n===== ===== ===== ===== removeLiquidity ===== ===== ===== =====\n")
+    }
+
+    async function swapExactTFTSupportFeeOn(nft:any, treasury:any, hot:any, factory:any, usr:any, amountIn:any, token:any, poolType:any, fee:any){
+        console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
+        console.log("BlockNumber:",await hre.ethers.provider.getBlockNumber());
+
+        const usrBalBefore1 = await token[0].balanceOf(usr[0]);
+        const usrBalBefore2 = await token[token.length-1].balanceOf(usr[0]);
+        const pair = await factory.getPair(token[0].target, token[token.length-1].target, poolType[0], fee[0]);
+        const pairContract = await hre.ethers.getContractAt("CoinfairPair", pair);
+        console.log("pair: ", pairContract.target)
+        const community = await pairContract.getProjectCommunityAddress()
+        expect(pair).to.not.equal(zeroAddress);
+        const treasuryBalBefore0 = await token[0].balanceOf(treasury);
+        const treasuryBalBefore1 = await token[token.length-1].balanceOf(treasury);
+        const communityTreasuryBefore0 = await treasury.CoinfairUsrTreasury(community, token[0]);
+        const communityTreasuryBefore1 = await treasury.CoinfairUsrTreasury(community, token[token.length-1]);
+        const feetoTreasuryBefore0 = await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[0]);
+        const feetoTreasuryBefore1 = await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[token.length-1]);
+
+        console.log(usr[0].address)
+        const parentAddr = await nft.parentAddress(usr[0]);
+        
+        const parentTreasuryBefore0 = await treasury.CoinfairUsrTreasury(parentAddr, token[0]);
+        const parentTreasuryBefore1 = await treasury.CoinfairUsrTreasury(parentAddr, token[token.length-1]);
+
+
+        const swapReceipt = await(await hot.swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn, 1, token, poolType, fee, usr[0], 999999999999)).wait()
+
+        const usrBalAfter1 = await token[0].balanceOf(usr[0]);
+        const usrBalAfter2 = await token[token.length-1].balanceOf(usr[0]);
+
+
+        const {_reserve0, _reserve1,} = await pairContract.getReserves();
+        const {_exponent0, _exponent1,} = await pairContract.getExponents();
+        const token0 = await pairContract.token0();
+        let XperY;
+        console.log("token info: ", token0, token[0].target, _exponent0, _exponent1)
+        if(token0 === token[0].target){
+            XperY = calculateXperY(_reserve0, _reserve1, BigInt(_exponent0), BigInt(_exponent1));
+        }else{
+            const YperX = calculateXperY(_reserve0, _reserve1, BigInt(_exponent0), BigInt(_exponent1));
+            XperY = (new Decimal(BigInt(1).toString())).div(YperX);
+        }
+
+        console.log("Price now:",XperY,await token[0].name(), "= 1",  await token[token.length-1].name());
+        console.log("Price now:",(new Decimal(BigInt(1).toString())).div(XperY),await token[token.length-1].name(), "= 1", await token[0].name());
+
+        console.log("swap transfered: ",await token[0].name(),":",(usrBalBefore1 - usrBalAfter1));
+        console.log("swap transfered: ",await token[token.length-1].name(),":",(usrBalBefore2 - usrBalAfter2));
+        console.log("(Notice: - pool -> usr & + usr -> pool)\n");
+        console.log("**** Tracking fee income ****")
+        
+        console.log("Treasury Balance Change  : ",await token[0].name(),await token[0].balanceOf(treasury)-treasuryBalBefore0);
+        console.log("Treasury Balance Change  : ",await token[token.length-1].name(),await token[token.length-1].balanceOf(treasury)-treasuryBalBefore1);
+        console.log("community Addr           :", community);
+        console.log("community Treasury Change: ",await token[0].name(),await treasury.CoinfairUsrTreasury(community, token[0])-communityTreasuryBefore0);
+        console.log("community Treasury Change: ",await token[token.length-1].name(),await treasury.CoinfairUsrTreasury(community, token[token.length-1])-communityTreasuryBefore1);
+
+        console.log("feeto Addr               :", await factory.feeTo());
+        console.log("feeto Treasury Change    : ",await token[0].name(),await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[0])-feetoTreasuryBefore0);
+        console.log("feeto Treasury Change    : ",await token[token.length-1].name(),await treasury.CoinfairUsrTreasury(await factory.feeTo(), token[token.length-1])-feetoTreasuryBefore1);
+
+        console.log("parent Addr              :", parentAddr)
+        console.log("feeto Treasury Change    : ",await token[0].name(),await treasury.CoinfairUsrTreasury(parentAddr, token[0])-parentTreasuryBefore0)
+        console.log("feeto Treasury Change    : ",await token[token.length-1].name(),await treasury.CoinfairUsrTreasury(parentAddr, token[token.length-1])-parentTreasuryBefore1);
+        console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
+
     }
 
     async function swapExactTFT(nft:any, treasury:any, hot:any, factory:any, usr:any, amountIn:any, token:any, poolType:any, fee:any){
@@ -274,6 +341,7 @@ describe("Coinfair", function () {
         console.log("\n===== ===== ===== =====   swap   ===== ===== ===== =====n")
 
     }
+
     
     describe("Coinfair", function () {
         it("Should be successfully deployed", async function () {
@@ -298,9 +366,7 @@ describe("Coinfair", function () {
           console.log("weth:               ",weth.target);
           console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
 
-          const warmAddr = await treasury.CoinfairWarmRouterAddress();
           console.log(hre.ethers.AbiCoder)
-          expect(hre.ethers.getAddress(warmAddr)).to.equal(warm.target);
         });
 
         it("Should successfully all (no fee/no eth)", async function(){
@@ -315,7 +381,10 @@ describe("Coinfair", function () {
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[2],[3])
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])          
             await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[2],[3])
-            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])          
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])     
+
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[2],[3])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])             
 
             await removeLiquidity(warm,factory,usr,cf,usdt,
                 await (await hre.ethers.getContractAt("CoinfairPair",(await factory.getPair(cf, usdt, 2, 3))))
@@ -330,16 +399,20 @@ describe("Coinfair", function () {
             await treasury.setRoolOver(pairContract110.target,false);
             console.log("test pool 1, 10 without roolover 1")
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[1],[10])
             await treasury.setRoolOver(pairContract110.target,true);
             console.log("test pool 1, 10 and roolover 1")
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[1],[10])
 
             await treasury.setRoolOver(pairContract110.target,false);
             console.log("test pool 1, 10 without roolover 2")
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[1],[10])
             await treasury.setRoolOver(pairContract110.target,true);
             console.log("test pool 1, 10 and roolover 2")
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[1],[10])
 
             await treasury.setRoolOver(pairContract110.target,false);
             console.log("test pool 1, 10 without roolover 3")

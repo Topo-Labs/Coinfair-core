@@ -4,13 +4,13 @@
 
 ### OPNBNB:
 
-- **CoinfairLibrary**:
-  - 0x9cd68fb2a51792927e6c8e25a71bb3e4e2e1eff3
+- **CoinfairLibrary**：
+  - 0x6db0173e31f7d95e0fd4f54bed1cf65f8ce19c0c
 
-- **CoinFairHotRouter**:
-  - 0x477De57C348168f84B456934f1F6C76eb6c4734b
-- **CoinFairWarmRouter**:
-  - 0x4F46010eD9E92075B36c2a656e4828d9B22ff6CD
+- **CoinFairHotRouter**：
+  - 0xc9F603dd4974FDFe9F7DEE5B825bc02b4c36C0CD
+- **CoinFairWarmRouter**：
+  - 0xd0752eE9167d99a4E62318fA99d6868D0F8262b8
 - **Factory**:
   - 0x837A7dBb71aa66f155642d619c08f5C11e73dCe8
 - **Initcode**:

@@ -1,4 +1,141 @@
-# Coinfair Audit
+# Coinfair-audit
+
+October 11th Reply:
+
+We have previously communicated with BD, and this audit is based on the following code repository:
+
+https://github.com/Topo-Labs/Coinfair-core
+
+1. **TCF-01**: `Token.sol`, `WETH.sol`, and `CoinfairView.sol` do not require auditing. `CoinfairNFT.sol` has already been audited, as previously discussed with BD.
+
+2. **CRC-04**: For pools composed of ERC20 and ERC20, the allowed types are 1/2/4. For pools composed of ERC20 and ETH, the allowed types are 1/2/3/4/5. This is because in `addLiquidityETH()`, the ERC20 token always comes before ETH.
+
+   ```solidity
+   function _addLiquidityETHAssist(address token, uint fee, bytes memory addLiquidityETHCmd) internal returns (uint, uint, uint8, uint) {
+       (uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, uint8 swapN) = abi.decode(addLiquidityETHCmd, (uint, uint, uint, uint8));
+       require(fee == 1 || fee == 3 || fee == 5 || fee == 10, "ERROR FEE");
+       bytes memory _addLiquidityCmd;
+       if (swapN == 1) {
+           _addLiquidityCmd = abi.encode(token, WETH, 32, 32, fee);
+       } else if (swapN == 2) {
+           // sequence == 0 && swapN == 2;
+           _addLiquidityCmd = abi.encode(token, WETH, 32, 8, fee);
+       } else if (swapN == 3) {
+           // sequence != 0 && swapN == 2;
+           _addLiquidityCmd = abi.encode(token, WETH, 8, 32, fee);
+       } else if (swapN == 4) {
+           // sequence == 0 && swapN == 3;
+           _addLiquidityCmd = abi.encode(token, WETH, 32, 1, fee);
+       } else if (swapN == 5) {
+           // sequence != 0 && swapN == 3;
+           _addLiquidityCmd = abi.encode(token, WETH, 1, 32, fee);
+       } else {
+           revert();
+       }
+       return _addLiquidity(_addLiquidityCmd, amountTokenDesired, msg.value, amountTokenMin, amountETHMin);
+   }
+   ```
+
+   Essentially, `_addLiquidityCmd = abi.encode(token, WETH, 8, 32, fee);` and `_addLiquidityCmd = abi.encode(WETH, token, 32, 8, fee);` are the same. If a user provides a type that Coinfair does not support, adding liquidity will not succeed.
+
+3. **CFT-01**: In the repository we provided, the code has been modified:
+
+   ```solidity
+   function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory data) internal returns (uint, uint) {
+       address _token0 = token0;
+       address _token1 = token1;
+       require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
+
+       if (exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)) {
+           TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+           ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
+       } else {
+           TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+           ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
+       }
+       if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+       if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+
+       if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+       return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
+   }
+   ```
+
+   **Fee Explanation**: For pools of types 2/3/4/5, the fee is charged in the token with the larger exponent. For example, if `token0 = abc`, `token1 = usdt`, `exponent0 = 8`, `exponent1 = 32`, then USDT will be used as the transaction fee, collected into `CoinfairTreasury` via the `collectFee()` function. For pools of type 1, we cannot determine based on the sizes of `exponent0` and `exponent1`, so by default, fees will be charged in `token1`. However, as project owners, we can apply to Coinfair to modify `roolOver` via admin privileges to change the fee to `token0`. (We believe that charging fees in `token0` or `token1` is essentially the same, but excessively charging fees in ERC20 tokens rather than ETH/USDT may cause sudden price drops to some extent.)
+
+4. **CFC-06**: The addresses of `factory` and `Treasury` are stored not only in the `factory` but also in each `pair`. For pairs that have already been created, it is difficult for us to modify their `factory` and `Treasury`. Similarly, modifying the `factory` in `Treasury` would mean abandoning all previously created pairs, which is rather challenging. If issues arise, we might prefer to redeploy the entire set of contracts. Additionally, we allow modifying the `Router` in `factory` and `Treasury`, which facilitates future updates.
+
+5. **GLOBAL-01**: We are conducting more comprehensive testing to cover all the code as much as possible.
+
+6. **CTC-03**: The comments have been deleted.
+
+7. **CRC-03**: After modifying functionalities during development, incorrect comments were inadvertently retained; we have now corrected this.
+
+8. **CFV-07**: In theory, the calculations of `price0CumulativeLast` and `price1CumulativeLast` can overflow, which depends on the value of `timeElapsed`. In practical scenarios, the conditions for overflow are quite stringent. For pools of types 4/5, the new transaction would need to be at least (2^32 / 32) seconds (approximately 4.26 years) after the previous transaction. For pools of types 2/3, this number is 34 years. For pools of type 1, this situation does not occur. To avoid the above situations, we have added a restriction: if such a situation does occur, we allow not accumulating the price; from this point on, the counting of `price0CumulativeLast` and `price1CumulativeLast` will be incorrect.
+
+9. **CFC-05**: We previously only restricted pool types in the `router`, but did not prevent users from directly calling `createPair` to create pool types that do not meet the specifications. We have now added restrictions:
+
+   ```solidity
+   ...
+   if (exponent0 == 32 && exponent1 == 32) { poolType = 1; }
+   else if (exponent0 == 32 && exponent1 == 8) { poolType = 2; }
+   else if (exponent0 == 8 && exponent1 == 32) { poolType = 3; }
+   else if (exponent0 == 32 && exponent1 == 1) { poolType = 4; }
+   else if (exponent0 == 1 && exponent1 == 32) { poolType = 5; }
+   else { revert(); }
+   ...
+   ```
+
+10. **CTC-02**: We have modified the fee collection logic to ensure that fees can be correctly collected for special fee tokens.
+
+11. **CTC-01**: Adjusted frontend logic; the `getBestPool()` function has been removed from `Treasury`.
+
+12. **CRC-02**: We have moved the setting of `projectCommunityAddress` to `createPair`, ensuring that project parties do not miss becoming the project owner.
+
+13. **CFC-04**: Similar to the code in **CFT-01**, due to the judgment of the exchange direction when collecting fees, we ensure that no `revert` occurs under all four exchange directions. You can refer to the tests.
+
+14. **CFV-05**: In the `createPair()` function, `exponent0` and `exponent1` should be used to determine the type, not `exponentA` and `exponentB`.
+
+    ```solidity
+    if (exponent0 == 32 && exponent1 == 32) { poolType = 1; }
+    else if (exponent0 == 32 && exponent1 == 8) { poolType = 2; }
+    else if (exponent0 == 8 && exponent1 == 32) { poolType = 3; }
+    else if (exponent0 == 32 && exponent1 == 1) { poolType = 4; }
+    else if (exponent0 == 1 && exponent1 == 32) { poolType = 5; }
+    else { revert(); }
+    ```
+
+    Suppose we have `tokenA` and `tokenB`, and `tokenA < tokenB`. Calling `createPair(tokenA, tokenB, 32, 1, fee);` will create a type 4 pool, while `createPair(tokenB, tokenA, 1, 32, fee);` will create a type 5 pool.
+
+    ```solidity
+    addLiquidity(tokenA, tokenB, abi.encode(amountADesired, amountBDesired, amountAMin, amountBMin, 4, fee));
+    // then
+    createPair(tokenA, tokenB, 32, 1, fee);
+    // then
+    getPair[tokenA][tokenB][4][fee];
+    // equals
+    getPair[tokenB][tokenA][4][fee];
+    // token0 = tokenA, token1 = tokenB, exponent0 = 32, exponent1 = 1
+    
+    // different
+    
+    addLiquidity(tokenB, tokenA, abi.encode(amountADesired, amountBDesired, amountAMin, amountBMin, 4, fee));
+    // then
+    createPair(tokenB, tokenA, 1, 32, fee);
+    // then
+    getPair[tokenA][tokenB][5][fee];
+    // equals
+    getPair[tokenB][tokenA][5][fee];
+    // token0 = tokenA, token1 = tokenB, exponent0 = 1, exponent1 = 32
+    ```
+    
+    
+
+---
+
+---
+
+
 
 Starting from the final review v2 response regarding:
 

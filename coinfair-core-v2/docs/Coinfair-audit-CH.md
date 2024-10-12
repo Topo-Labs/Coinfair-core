@@ -1,5 +1,142 @@
 # Coinfair-audit
 
+10-11 回复：
+
+之前已经和BD沟通过，本次审计基于的代码仓库如下
+
+https://github.com/Topo-Labs/Coinfair-core
+
+1. TCF-01：Token.sol、WETH.sol和CoinfairView.sol无需审计，CoinfairNFT.sol已经审计过，之前与BD已经沟通过。
+
+2. CRC-04：对于ERC20和ERC20组成的池子，允许的类型有1/2/4。对于ERC20和ETH组成的池子，允许的类型有1/2/3/4/5。这是因为addLiquidityETH()中，erc20总是在eth的前面
+
+   ```solidity
+       function _addLiquidityETHAssist(address token, uint fee, bytes memory addLiquidityETHCmd)internal returns(uint,uint,uint8,uint){
+           (uint amountTokenDesired,uint amountTokenMin,uint amountETHMin,uint8 swapN) = abi.decode(addLiquidityETHCmd,(uint,uint,uint,uint8));
+           require(fee == 1 || fee == 3 || fee == 5 || fee == 10, "ERROR FEE");
+           bytes memory _addLiquidityCmd;
+           if(swapN == 1){
+               _addLiquidityCmd = abi.encode(token, WETH, 32, 32, fee);
+           }else if(swapN == 2){
+               // sequence == 0 && swapN == 2;
+               _addLiquidityCmd = abi.encode(token, WETH, 32, 8, fee);
+           }else if(swapN == 3){
+               // sequence != 0 && swapN == 2;
+               _addLiquidityCmd = abi.encode(token, WETH, 8, 32, fee);
+           }else if(swapN == 4){
+               // sequence == 0 && swapN == 3;
+               _addLiquidityCmd = abi.encode(token, WETH, 32, 1, fee);
+           }else if(swapN == 5){
+               // sequence != 0 && swapN == 3;
+               _addLiquidityCmd = abi.encode(token, WETH, 1, 32, fee);
+           }else{
+               revert();
+           }
+           return _addLiquidity(_addLiquidityCmd, amountTokenDesired,msg.value,amountTokenMin,amountETHMin);
+       }
+   ```
+
+   本质上` _addLiquidityCmd = abi.encode(token, WETH, 8, 32, fee);`和`_addLiquidityCmd = abi.encode(WETH, token, 32, 8, fee);`是相同的。如果用户提供了Coinfair不支持的类型，将不会成功添加流动性。
+
+3. CFT-01：在我们提供的仓库中，代码已经修改：
+
+   ```solidity
+       function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory data)internal returns(uint,uint){
+           address _token0 = token0;
+           address _token1 = token1;
+           require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
+   
+           if(exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)){
+               TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+               ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
+           }else{
+               TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+               ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
+           }
+           if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+           if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+   
+           if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+           return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
+       }
+   ```
+
+   手续费的说明：对于类型为2/3/4/5的池子，手续费手续exponent大的代币，例如`token0 = abc,token1 = usdt, exponent0 = 8, exponent1 = 32`那么usdt将作为交易的手续费，由`collectFee()`函数收集到到CoinfairTreasury中。对于类型为1的池子，无法通过exponent0和exponent1的大小判断，因此会默认收取token1。但是作为项目方，可以向Coinfair申请通过管理员权限修改roolOver来修改手续费为token0。（我们认为手续费收取token0或token1本质上是相同的，但是过多的收取erc20而非eth/usdt等作为手续费，会在一定程度上引起价格的突然下跌）
+
+4. CFC-06 ：factory和Treasury的地址不仅在factory中存储，也会在pair中存储，对于已经创建的pair，我们很难修改其中的factory和Treasury。同样在Treasury中修改factory也会代表放弃了所有已经创建的pair，这比较困难。如果出现问题我们可能更倾向于重新部署整套合约。此外factory和Treasury中我们是允许修改Router的，这便于日后更新。
+
+5. GLOBAL-01：正在完成更复杂的测试，尽力覆盖所有代码。
+
+6. CTC-03：注释已经删除。
+
+7. CRC-03：开发时修改功能后，注释错误的保留了，目前已经修改。
+
+8. CFV-07：理论上price0CumulativeLast和price1CumulativeLast的计算中是会出现溢出，这取决于timeElapsed的值，在现实情况下，溢出的条件比较苛刻，对于4/5类池子，要求新交易距离上一笔交易至少(2^32 / 32) 秒，约4.26年，对于2/3类池子，这个数字是34年，对于1类池子不会出现这种情况。为了避免以上情况，我们增加了限制：如果确实发生以上情况，我们允许不累计价格，此刻开始price0CumulativeLast和price1CumulativeLast的计数会出错。
+
+9. CFC-05：我们只在router中对池子类型进行了限制，却没有禁止用户直接调用createPair去创建不符合规定的池子类型。我们已经增加了限制：
+
+   ```solidity
+          ...
+           if(exponent0 == 32 && exponent1 == 32){poolType = 1;}
+           else if (exponent0 == 32 && exponent1 == 8){poolType = 2;}
+           else if (exponent0 == 8 && exponent1 == 32){poolType = 3;}
+           else if (exponent0 == 32 && exponent1 == 1){poolType = 4;}
+           else if (exponent0 == 1 && exponent1 == 32){poolType = 5;}
+           else{revert();}
+          ...
+   ```
+
+10. CTC-02：已经修改手续费收取逻辑，确保对特殊的手续费代币也可以正确收取手续费
+
+11. CTC-01：前端逻辑调整，getBestPool()函数已经从Treasury中删除
+
+12. CRC-02：已经将projectCommunityAddress的设置转移至createPair，确保项目方不会错过成为项目方
+
+13. CFC-04：同CFT-01代码，由于在收取手续费时存在兑换方向的判断，确保四种兑换方向下都不会revert，可参考测试
+
+14. CFV-05：createPair()函数中应该使用exponent0和exponent1来判断类型，而非exponentA和exponentB
+
+    ```solidity
+            if(exponent0 == 32 && exponent1 == 32){poolType = 1;}
+            else if (exponent0 == 32 && exponent1 == 8){poolType = 2;}
+            else if (exponent0 == 8 && exponent1 == 32){poolType = 3;}
+            else if (exponent0 == 32 && exponent1 == 1){poolType = 4;}
+            else if (exponent0 == 1 && exponent1 == 32){poolType = 5;}
+            else{revert();}
+    ```
+
+    假设有tokenA和，且tokenA < tokenB，`createPair(tokenB, tokenA, 32, 1, fee);`会创建4类型池，而`createPair(tokenB, tokenA, 32, 1, fee);`会创建5类型池
+
+    ```solidity
+    addLiquidity(tokenA, tokenB, abi.encode(amountADesired, amountBDesired, amountAMin, amountBMin, 4, fee));
+    // then
+    createPair(tokenA, tokenB, 32, 1, fee);
+    // then
+    getpair[tokenA][tokenB][4][fee];
+    // equals
+    getpair[tokenB][tokenA][4][fee];
+    // token0 = tokenA, token1 = tokenB, exponent0 = 32, exponent1 = 1
+    
+    // different
+    
+    addLiquidity(tokenB, tokenA, abi.encode(amountADesired, amountBDesired, amountAMin, amountBMin, 4, fee));
+    // then
+    createPair(tokenB, tokenA, 1, 32, fee);
+    // then
+    getpair[tokenA][tokenB][5][fee];
+    // equals
+    getpair[tokenB][tokenA][5][fee];
+    // token0 = tokenA, token1 = tokenB, exponent0 = 1, exponent1 = 32
+    
+    
+    ```
+
+    
+
+---
+
+---
+
 从终审v2开始回复，对于：
 
 1. CCK-03、BAC-04、CFV-09、CCK-02、CFC-02，可以保持解决程度为`Acknowledged`
