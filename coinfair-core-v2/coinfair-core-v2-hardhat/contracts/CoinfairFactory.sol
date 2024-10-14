@@ -1,6 +1,7 @@
 
 // Mozilla Public License 2.0
 pragma solidity =0.5.16;
+
 library TransferHelper {
     function safeApprove(address token, address to, uint value) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
@@ -740,7 +741,6 @@ contract CoinfairFactory is ICoinfairFactory {
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         (uint256 exponent0, uint256 exponent1) = tokenA < tokenB ? (exponentA, exponentB) : (exponentB, exponentA);
         require(token0 != address(0), 'Coinfair: ZERO_ADDRESS');
-
         uint8 poolType;
         if(exponent0 == 32 && exponent1 == 32){poolType = 1;}
         else if (exponent0 == 32 && exponent1 == 8){poolType = 2;}

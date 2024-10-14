@@ -70,9 +70,9 @@ describe("Coinfair", function () {
         )
 
         const StandardToken= await hre.ethers.getContractFactory("StandardToken");
-        const usdt = await StandardToken.deploy("USDT", "USDT", 100000000000000, hot.target, warm.target);    
-        const cf = await StandardToken.deploy("CF", "CF", 100000000000000, hot.target, warm.target);       
         // const usdt = await StandardToken.deploy("USDT", "USDT", 100000000000000, hot.target, warm.target);    
+        const cf = await StandardToken.deploy("CF", "CF", 100000000000000, hot.target, warm.target);       
+        const usdt = await StandardToken.deploy("USDT", "USDT", 100000000000000, hot.target, warm.target);    
         
         const WETH= await hre.ethers.getContractFactory("WETH");
         const weth = await WETH.deploy();
@@ -98,7 +98,14 @@ describe("Coinfair", function () {
         const usrBalAfter2 = await token1.balanceOf(usr[0]);
         console.log("addLiquidity transfered ",await token0.name(),":",(usrBalBefore1 - usrBalAfter1));
         console.log("addLiquidity transfered ",await token1.name(),":",(usrBalBefore2 - usrBalAfter2));
-
+        if(BigInt(token0.target) > BigInt(token1.target)){
+            if(poolType === 2){
+                poolType = 3;
+            }else if(poolType === 4){
+                poolType = 5;
+            }
+        }
+        console.log(token0.target, token1.target, poolType)
         const pairAfter = await factory.getPair(token0, token1, poolType, fee);
         console.log("pair: ",pairAfter);
         expect(pairAfter).to.not.equal(zeroAddress);
@@ -377,18 +384,25 @@ describe("Coinfair", function () {
 
             const pair23 = await factory.getPair(cf, usdt, 2, 3);
             const pairContract23 = await hre.ethers.getContractAt("CoinfairPair", pair23);
+            let poolType_ = 2;
+            if(BigInt(cf.target) > BigInt(usdt.target)){
+                if(poolType_ === 2){
+                    poolType_ = 3;
+                }else if(poolType_ === 4){
+                    poolType_ = 5;
+                }
+            }
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[poolType_],[3])
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[poolType_],[3])          
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[poolType_],[3])
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[poolType_],[3])     
 
-            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[2],[3])
-            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])          
-            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[2],[3])
-            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])     
-
-            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[2],[3])
-            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[2],[3])             
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[poolType_],[3])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[poolType_],[3])             
 
             await removeLiquidity(warm,factory,usr,cf,usdt,
-                await (await hre.ethers.getContractAt("CoinfairPair",(await factory.getPair(cf, usdt, 2, 3))))
-                    .balanceOf(usr[0]),2,3)
+                await (await hre.ethers.getContractAt("CoinfairPair",(await factory.getPair(cf, usdt, poolType_, 3))))
+                    .balanceOf(usr[0]),poolType_,3)
 
             // ========================================================================
             console.log("test pool 1, 10 without roolover")

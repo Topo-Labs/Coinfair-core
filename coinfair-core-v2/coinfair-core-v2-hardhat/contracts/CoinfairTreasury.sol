@@ -29,7 +29,7 @@ library TransferHelper {
         require(success, 'TransferHelper: ETH_TRANSFER_FAILED');
     }
 
-    function sendValue(address payable recipient, uint256 amount) internal {
+    function sendValue(address payable recipient, uint256  amount) internal {
         if (address(this).balance < amount) {
             revert();
         }
@@ -415,8 +415,6 @@ contract CoinfairTreasury is ICoinfairTreasury {
     }
 
     receive() external payable {}
-
-
 
 }
 

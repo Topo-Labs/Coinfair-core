@@ -1,5 +1,39 @@
 # Coinfair-audit
 
+10.15 更新：
+
+1. CFC-05：修正了warmRouter中的`_addLiquidityAssist_()`函数
+
+   ```solidity
+       function _addLiquidityAssist_(bytes memory _addLiquidityCmd)internal virtual returns(uint reserveA, uint reserveB, uint8 poolType, uint fee){
+           (address tokenA, address tokenB, uint256 exponentA, uint256 exponentB, uint _fee) = abi.decode(_addLiquidityCmd,(address, address, uint256, uint256, uint));
+           fee = _fee;
+   
+           if(tokenA < tokenB){
+               if(exponentA == 32 && exponentB == 32){poolType=1;}
+               else if (exponentA == 32 && exponentB == 8){poolType = 2;}
+               else if (exponentA == 8 && exponentB == 32){poolType = 3;}
+               else if (exponentA == 32 && exponentB == 1){poolType = 4;}
+               else if (exponentA == 1 && exponentB == 32){poolType = 5;}
+           }else{
+               if(exponentA == 32 && exponentB == 32){poolType=1;}
+               else if (exponentA == 32 && exponentB == 8){poolType = 3;}
+               else if (exponentA == 8 && exponentB == 32){poolType = 2;}
+               else if (exponentA == 32 && exponentB == 1){poolType = 5;}
+               else if (exponentA == 1 && exponentB == 32){poolType = 4;}
+           }
+           
+           // create the pair if it doesn't exist yet
+           if (ICoinfairFactory(factory).getPair(tokenA, tokenB, poolType, _fee) == address(0)) {
+               ICoinfairFactory(factory).createPair(tokenA, tokenB, exponentA, exponentB, _fee);
+           }
+   
+           (reserveA, reserveB) = CoinfairLibrary.getReserves(factory, tokenA, tokenB, poolType, _fee);
+       }
+   ```
+
+   
+
 10-11 回复：
 
 之前已经和BD沟通过，本次审计基于的代码仓库如下
@@ -85,6 +119,8 @@ https://github.com/Topo-Labs/Coinfair-core
            else{revert();}
           ...
    ```
+
+   
 
 10. CTC-02：已经修改手续费收取逻辑，确保对特殊的手续费代币也可以正确收取手续费
 

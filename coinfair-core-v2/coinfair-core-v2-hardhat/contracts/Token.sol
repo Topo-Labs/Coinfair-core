@@ -11,6 +11,10 @@ contract StandardToken is ERC20 {
         _approve(msg.sender, a, _totalAmount * (10 ** uint256(decimals())));
         _approve(msg.sender, b, _totalAmount * (10 ** uint256(decimals())));
     }
+
+    function decimals() public pure override  returns (uint8) {
+        return 18;
+    }
 }
 
 contract StandardTokenWithFees is ERC20 {
