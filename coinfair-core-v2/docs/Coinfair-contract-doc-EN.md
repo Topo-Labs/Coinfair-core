@@ -5,19 +5,19 @@
 ### OPNBNB:
 
 - CoinfairLibrary：
-  - 
+  - 0xa1c416e86041ddb452990e745e20f6cf444dafbd
 - CoinFairHotRouter：
-  - 
+  - 0x426f2a4665E1304710C1A0615084d0548b1E8f77
 - CoinFairWarmRouter：
-  - 
+  - 0x26f29d8ca2a6454Ec2f748c16455De7653259E05
 - CoinfairFactory：
-  - 
+  - 0x47F3Bf58EB1A207b45E9D60F51fa30F1f5D49248
 - Initcode：
   - 0x57b1cf0d398e777c9cb81a91d310ddecfdc1baea29793572fa76615692b6ba8b
 - CoinFairTreasury：
-  - 
+  - 0x0f517d44d2E99869153388Eb62D8d332Ee97055A
 - CoinFairNFT：
-  - 
+  - 0xeC569eB67EAFa262639A6452bC6019bf35040857
 - abi
   - https://github.com/Topo-Labs/Coinfair-core
 
