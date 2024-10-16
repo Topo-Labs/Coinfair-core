@@ -1,5 +1,75 @@
 # Coinfair-audit
 
+10.16更新：
+
+1. CFT-01：**之前的说明有错误，代码没问题，现在修正说明**
+
+   在我们提供的仓库中，代码已经修改：
+
+```solidity
+    function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory data)internal returns(uint,uint){
+        address _token0 = token0;
+        address _token1 = token1;
+        require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
+
+        if(exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)){
+            TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+            ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
+        }else{
+            TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+            ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
+        }
+        if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+        if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+
+        if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+        return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
+    }
+```
+
+手续费的说明：对于类型为2/3/4/5的池子，手续费手续exponent小的代币，例如`token0 = abc,token1 = usdt, exponent0 = 32, exponent1 = 8`那么usdt将作为交易的手续费，由`collectFee()`函数收集到到CoinfairTreasury中。对于类型为1的池子，无法通过exponent0和exponent1的大小判断，因此会默认收取token1（地址较大的一个token）。但是作为项目方，可以向Coinfair申请通过管理员权限修改roolOver来修改手续费为token0。（我们认为手续费收取token0或token1本质上是相同的，但是过多的收取erc20而非eth/usdt等作为手续费，会在一定程度上引起价格的突然下跌）
+
+2. CFC-07：目前的设计中，fee的计算在hotRouter中，允许用户直接调用pair的swap()可能用户绕过手续费，因此我们只允许router调用swap()，同时我们修改了代码，删除了不会被触发的回调
+
+   ```solidity
+       function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory)internal returns(uint,uint){
+           address _token0 = token0;
+           address _token1 = token1;
+           require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
+   
+           if(exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)){
+               TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+               ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
+           }else{
+               TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+               ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
+           }
+           if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+           if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+   
+           // if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+           return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
+       }
+   ```
+
+3. CTC-05：已修正，防止合约部署时的错误
+
+4. CFF-03：已修正，增加了对fee的验证
+
+5. TLB-01 ：经过讨论，暂时删除lp锁定解锁功能
+
+6. CTC-01：已经将CoinfairView合约单独放置一个文件
+
+7. CRC-02：首先，我们会积极检测所有交易活跃的pair，对于已经存在的erc20代币的pair，如果有较大的交易量，我们会主动考察项目方地址是否真实。也可以由项目方主动申请，保障自己的利益。另外项目方地址只作为一个参考，如果某些池子的lp很分散/或需要某些pair的lp变得分散，我们会通过isPoolFeeOn和feeToWeight开启lp持有者的手续费收入。
+
+8. CFV-07：已修改
+
+9. CTC-04：已修改
+
+---
+
+---
+
 10.15 更新：
 
 1. CFC-05：修正了warmRouter中的`_addLiquidityAssist_()`函数

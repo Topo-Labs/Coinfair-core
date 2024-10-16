@@ -1,5 +1,69 @@
 # Coinfair-audit
 
+Update on October 16:
+
+1. **CFT-01:** *The previous explanation was incorrect; the code is fine. Now correcting the explanation.*
+
+   In the repository we provided, the code has been modified:
+
+```solidity
+function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory data) internal returns (uint, uint) {
+    address _token0 = token0;
+    address _token1 = token1;
+    require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
+
+    if (exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)) {
+        TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+        ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
+    } else {
+        TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+        ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
+    }
+    if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+    if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+
+    if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+    return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
+}
+```
+
+**Explanation of the fees:** For pools of types 2/3/4/5, the fee is charged in the token with the smaller exponent. For example, if `token0 = abc`, `token1 = usdt`, `exponent0 = 32`, and `exponent1 = 8`, then USDT will be used as the transaction fee, collected into the `CoinfairTreasury` through the `collectFee()` function. For pools of type 1, since we cannot determine based on the sizes of `exponent0` and `exponent1`, the fee will default to `token1` (the token with the larger address). However, project parties can apply to Coinfair to modify `roolOver` through admin privileges to change the fee to be charged in `token0`. *(We believe that collecting fees in `token0` or `token1` is essentially the same, but excessive collection of ERC20 tokens instead of ETH/USDT as fees may cause sudden price drops to some extent.)*
+
+2. **CFC-07:** In the current design, the fee calculation is in `hotRouter`. Allowing users to directly call the pair's `swap()` function may enable them to bypass the fee. Therefore, we only allow the router to call `swap()`. Additionally, we have modified the code and removed the callback that would not be triggered.
+
+```solidity
+function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory) internal returns (uint, uint) {
+    address _token0 = token0;
+    address _token1 = token1;
+    require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
+
+    if (exponent0 < exponent1 || (exponent0 == exponent1 && roolOver)) {
+        TransferHelper.safeApprove(_token0, CoinfairTreasury, fee_);
+        ICoinfairTreasury(CoinfairTreasury).collectFee(_token0, to, fee_, address(this));
+    } else {
+        TransferHelper.safeApprove(_token1, CoinfairTreasury, fee_);
+        ICoinfairTreasury(CoinfairTreasury).collectFee(_token1, to, fee_, address(this));
+    }
+    if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+    if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+
+    // if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+    return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
+}
+```
+
+3. **CTC-05:** Fixed to prevent errors during contract deployment.
+4. **CFF-03:** Fixed; added validation for the `fee`.
+5. **TLB-01:** After discussion, we have temporarily removed the LP lock/unlock function.
+6. **CTC-01:** The `CoinfairView` contract has been placed in a separate file.
+7. **CRC-02:** Firstly, we will actively monitor all pairs with active trading. For pairs of existing ERC20 tokens with large trading volumes, we will proactively verify whether the project party's address is authentic. Project parties can also apply proactively to protect their interests. Additionally, the project party's address is only a reference. If the LP of certain pools is highly decentralized, or if we need certain pairs' LP to become decentralized, we will enable LP holders to receive fee income through `isPoolFeeOn` and `feeToWeight`.
+8. **CFV-07:** Modified.
+9. **CTC-04:** Modified.
+
+---
+
+---
+
 10.15 Update：
 
 1. CFC-05：Update warmRouter function`_addLiquidityAssist_()`

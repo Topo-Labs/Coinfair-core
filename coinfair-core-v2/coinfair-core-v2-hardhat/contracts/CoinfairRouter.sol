@@ -446,7 +446,7 @@ library CoinfairLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1, poolType, fee)),
-                hex'1e8bcb98eb3243c97030996a6933a940a6be830a128d71f2a835e4d68f4caf2a' // init code hash
+                hex'e9df98d48e2ac0dc6e3c97c96a1d4b62e3635a19d8f7ed088e6f4b6b652b1427' // init code hash
             ))));
     }
 
@@ -650,7 +650,7 @@ contract CoinfairWarmRouter is ICoinfairWarmRouter {
     constructor(address _factory) public {
         require(_factory != address(0));
         factory = _factory;
-        WETH = 0x4200000000000000000000000000000000000006;
+        WETH = 0x7a2088a1bFc9d81c55368AE168C2C02570cB814F;
     }
 
     receive() external payable {
@@ -938,7 +938,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
     constructor(address _factory) public {
         require(_factory != address(0));
         factory = _factory;
-        WETH = 0x4200000000000000000000000000000000000006;
+        WETH = 0x7a2088a1bFc9d81c55368AE168C2C02570cB814F;
     }
 
     receive() external payable {
@@ -960,6 +960,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
             );
         }
     }
+
     function swapExactTokensForTokens(
         uint amountIn,
         uint amountOutMin,
@@ -1142,6 +1143,7 @@ contract CoinfairHotRouter is ICoinfairHotRouter {
             'CoinfairRouter: INSUFFICIENT_OUTPUT_AMOUNT'
         );
     }
+    
     function swapExactETHForTokensSupportingFeeOnTransferTokens(
         uint amountOutMin,
         address[] calldata path,

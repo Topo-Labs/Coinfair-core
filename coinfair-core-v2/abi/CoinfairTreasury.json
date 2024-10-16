@@ -38,21 +38,16 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "pair",
+				"name": "_CoinfairFactoryAddress",
 				"type": "address"
 			},
 			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "time",
-				"type": "uint256"
+				"internalType": "address",
+				"name": "_CoinfairNFTAddress",
+				"type": "address"
 			}
 		],
-		"name": "lockLP",
+		"name": "setDEXAddress",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -92,104 +87,6 @@
 		],
 		"name": "CollectFee",
 		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "pair",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "locker",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "lockTime",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "bool",
-				"name": "isFirstTimeLock",
-				"type": "bool"
-			}
-		],
-		"name": "LockLP",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "pair",
-				"type": "address"
-			}
-		],
-		"name": "releaseLP",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "pair",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "releaser",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "ReleaseLP",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_CoinfairFactoryAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_CoinfairNFTAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_CoinfairWarmRouterAddress",
-				"type": "address"
-			}
-		],
-		"name": "setDEXAddress",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"inputs": [
@@ -282,6 +179,16 @@
 				"internalType": "uint256",
 				"name": "newProjectCommunityAddressRatio",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newGrandParentAddressLevel1Ratio",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newGrandParentAddressLevel2Ratio",
+				"type": "uint256"
 			}
 		],
 		"name": "setRatio",
@@ -346,6 +253,10 @@
 		"type": "event"
 	},
 	{
+		"stateMutability": "payable",
+		"type": "receive"
+	},
+	{
 		"inputs": [],
 		"name": "AUTHORS",
 		"outputs": [
@@ -379,40 +290,6 @@
 				"internalType": "address",
 				"name": "",
 				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "CoinfairLPPrison",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "pair",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "dischargedTime",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -500,12 +377,25 @@
 	},
 	{
 		"inputs": [],
-		"name": "CoinfairWarmRouterAddress",
+		"name": "grandParentAddressLevel1Ratio",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "uint256",
 				"name": "",
-				"type": "address"
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "grandParentAddressLevel2Ratio",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

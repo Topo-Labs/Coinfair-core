@@ -408,9 +408,8 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'Coinfair: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-        // 4_294_967_295 = 2**32 - 1
-        if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0 && 
-            timeElapsed < (_exponent0 > _exponent1 ?(4_294_967_295 / _exponent0 * _exponent1) : (4_294_967_295 / _exponent1 * _exponent0))) {
+        // 134_217_726 = 2**32 - 1
+        if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0 && timeElapsed < 134_217_726) {
             // * never overflows, and + overflow is desired
             price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed * _exponent0 / _exponent1;
             price1CumulativeLast += uint(UQ112x112.encode(_reserve0).uqdiv(_reserve1)) * timeElapsed * _exponent1 / _exponent0;
@@ -671,7 +670,7 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         emit Swap(msg.sender, balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0, balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0, amount0Out, amount1Out, to);
     }
 
-    function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory data)internal returns(uint,uint){
+    function _swapAssist(address to, uint amount0Out, uint amount1Out, uint fee_, bytes memory)internal returns(uint,uint){
         address _token0 = token0;
         address _token1 = token1;
         require(to != _token0 && to != _token1, 'Coinfair: INVALID_TO');
@@ -686,7 +685,7 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         if (amount0Out > 0)  _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
         if (amount1Out > 0)  _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
 
-        if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
+        // if (data.length > 0) ICoinfairCallee(to).CoinfairCall(msg.sender, amount0Out, amount1Out, data);
         return (IERC20(_token0).balanceOf(address(this)), IERC20(_token1).balanceOf(address(this)));
     }
 
@@ -727,7 +726,7 @@ contract CoinfairFactory is ICoinfairFactory {
         feeTo = 0x7eB9CFa85f4BFe5Ffd352eC417bA9011d755a7c0;
         feeToWeight = 0;
 
-        WETH = 0x4200000000000000000000000000000000000006;
+        WETH = 0x7a2088a1bFc9d81c55368AE168C2C02570cB814F;
 
         CoinfairTreasury = _coinFairTreasury;
     }
@@ -741,6 +740,7 @@ contract CoinfairFactory is ICoinfairFactory {
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         (uint256 exponent0, uint256 exponent1) = tokenA < tokenB ? (exponentA, exponentB) : (exponentB, exponentA);
         require(token0 != address(0), 'Coinfair: ZERO_ADDRESS');
+        require(fee == 1 || fee == 3 || fee == 5 || fee == 10, 'Coinfair: ERROR FEE');
         uint8 poolType;
         if(exponent0 == 32 && exponent1 == 32){poolType = 1;}
         else if (exponent0 == 32 && exponent1 == 8){poolType = 2;}
@@ -748,7 +748,7 @@ contract CoinfairFactory is ICoinfairFactory {
         else if (exponent0 == 32 && exponent1 == 1){poolType = 4;}
         else if (exponent0 == 1 && exponent1 == 32){poolType = 5;}
         else{revert();}
- 
+
         require(getPair[token0][token1][poolType][fee] == address(0), 'Coinfair: PAIR_EXISTS'); // single check is sufficient
         bytes memory bytecode = type(CoinfairPair).creationCode;
 

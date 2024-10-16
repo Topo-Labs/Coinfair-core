@@ -214,12 +214,6 @@ contract CoinfairTreasury is ICoinfairTreasury {
     uint public grandParentAddressLevel2Ratio = 0;
     uint public projectCommunityAddressRatio = 400;
 
-    struct LPPrison{
-        address pair;
-        uint256 amount;
-        uint256 dischargedTime;
-    }
-
     // CoinfairUsrTreasury[owner][token]
     mapping(address => mapping(address => uint256))public CoinfairUsrTreasury;
     // CoinfairUsrTreasuryTotal[owner][token]
@@ -227,14 +221,8 @@ contract CoinfairTreasury is ICoinfairTreasury {
     // CoinfairTotalTreasury[token]
     mapping(address => uint256)public CoinfairTotalTreasury;
 
-    // CoinfairLPPrison[owner][token]
-    mapping(address => mapping(address => LPPrison))public CoinfairLPPrison;
-
     event CollectFee(address indexed token, address indexed owner, uint amount, address indexed pair);
     event WithdrawFee(address indexed token, address indexed owner, uint amount);
-
-    event LockLP(address indexed pair, address indexed locker, uint amount,uint256 lockTime, bool isFirstTimeLock);
-    event ReleaseLP(address indexed pair, address indexed releaser, uint amount);
 
     modifier onlyCoinfair() {
         require(msg.sender == Coinfair,'CoinfairTreasury:ERROR OPERATOR');
@@ -243,7 +231,7 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
     constructor()public{
         require(parentAddressLevel2Ratio >= parentAddressLevel1Ratio && grandParentAddressLevel2Ratio >= grandParentAddressLevel1Ratio
-        && parentAddressLevel2Ratio.add(projectCommunityAddressRatio) <= 1000, 'CoinfairTreasury:ERROR DEPLOYER');
+        && grandParentAddressLevel2Ratio.add(parentAddressLevel2Ratio).add(projectCommunityAddressRatio) <= 1000, 'CoinfairTreasury:ERROR DEPLOYER');
         Coinfair = msg.sender;
     }
 
@@ -298,25 +286,25 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
     function _parentCollectFee(address token, address owner, uint amount) internal returns(uint amount1){
         (address parentAddress,address grandParentAddress) = ICoinfairNFT(CoinfairNFTAddress).getTwoParentAddress(owner);
-        uint amount10;
-        uint amount11;
+        uint parentFeeAmount;
+        uint grandParentFeeAmount;
         if(parentAddress != address(0)){
             uint parentAddressRatio = ICoinfairNFT(CoinfairNFTAddress).level(parentAddress) == 0 ?
                                         parentAddressLevel1Ratio : parentAddressLevel2Ratio;
-            amount10 = amount.mul(parentAddressRatio) / 1000;
-            CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(amount10);
-            CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(amount10);
+            parentFeeAmount = amount.mul(parentAddressRatio) / 1000;
+            CoinfairUsrTreasury[parentAddress][token] = CoinfairUsrTreasury[parentAddress][token].add(parentFeeAmount);
+            CoinfairUsrTreasuryTotal[parentAddress][token] = CoinfairUsrTreasuryTotal[parentAddress][token].add(parentFeeAmount);
         }
 
         if(grandParentAddress != address(0)){
             uint grandParentAddressRatio = ICoinfairNFT(CoinfairNFTAddress).level(grandParentAddress) == 0 ?
                                         grandParentAddressLevel1Ratio : grandParentAddressLevel2Ratio;
-            amount11 = amount.mul(grandParentAddressRatio) / 1000;
-            CoinfairUsrTreasury[grandParentAddress][token] = CoinfairUsrTreasury[grandParentAddress][token].add(amount11);
-            CoinfairUsrTreasuryTotal[grandParentAddress][token] = CoinfairUsrTreasuryTotal[grandParentAddress][token].add(amount11);
+            grandParentFeeAmount = amount.mul(grandParentAddressRatio) / 1000;
+            CoinfairUsrTreasury[grandParentAddress][token] = CoinfairUsrTreasury[grandParentAddress][token].add(grandParentFeeAmount);
+            CoinfairUsrTreasuryTotal[grandParentAddress][token] = CoinfairUsrTreasuryTotal[grandParentAddress][token].add(grandParentFeeAmount);
         }
 
-        amount1 = amount11.add(amount11);
+        amount1 = parentFeeAmount.add(grandParentFeeAmount);
     }
 
     // set three ratio to divide dex fee
@@ -373,40 +361,6 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
         TransferHelper.safeTransfer(token, msg.sender, waiting);  
     }
-
-    // lock
-    // must approve pair to treasury first
-    function lockLP(address pair, uint256 amount, uint256 time)public {
-        require(pair != address(0) && time > block.timestamp && amount > 0,'CoinfairTreasury:LOCK ERROR');
-        LPPrison storage lpPrison = CoinfairLPPrison[msg.sender][pair];
-        require(time > lpPrison.dischargedTime,'CoinfairTreasury:CANT REDUCE DISCHARGEDTIME');
-        bool isFirstTimeLock;
-        if(lpPrison.pair == address(0)){
-            lpPrison.pair = pair;
-            isFirstTimeLock = true;
-        }
-        lpPrison.amount = lpPrison.amount.add(amount);
-        lpPrison.dischargedTime = time;
-
-        emit LockLP(pair, msg.sender, amount, time, isFirstTimeLock);
-
-        TransferHelper.safeTransferFrom(pair, msg.sender, address(this), amount);
-    }
-
-    function releaseLP(address pair)public {
-        require(pair != address(0),'CoinfairTreasury:RELEASE ERROR');
-        LPPrison storage lpPrison = CoinfairLPPrison[msg.sender][pair];
-        require(lpPrison.pair != address(0) && lpPrison.amount > 0,'CoinfairTreasury:NO LOCK LP');
-        require(lpPrison.dischargedTime <= block.timestamp,'CoinfairTreasury:TOO EARLY');
-
-        uint256 releaseAmount = lpPrison.amount;
-
-        lpPrison.amount = 0;
-
-        emit ReleaseLP(pair, msg.sender, releaseAmount);
-
-        TransferHelper.safeTransfer(pair, msg.sender, releaseAmount);
-    }
     
     // Receive the eth accidentally entered into the contract
     function collectETH() public onlyCoinfair {
@@ -416,114 +370,4 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
     receive() external payable {}
 
-}
-
-
-contract CoinfairView {
-    using SafeMath for uint;
-    using UQ112x112 for uint224;
-
-    address public CoinfairFactoryAddress;
-    address public CoinfairWarmRouterAddress;
-
-    string public constant AUTHORS = "Coinfair";
-
-    struct usrPoolManagement{
-        address usrPair;
-        uint8 poolType;
-        uint fee;
-        uint reserve0;
-        uint reserve1;
-        uint256 usrBal;
-        uint256 totalSupply;
-    }
-
-    uint8[4] public fees = [1, 3, 5, 10];
-
-    constructor(address _warm, address _fac) public{
-        CoinfairFactoryAddress = _fac;
-        CoinfairWarmRouterAddress = _warm;
-    }
-
-    // return the best pool among multiple pools under a specific value
-    function getBestPool(address[] memory path, uint amount, bool isExactTokensForTokens)public view returns(
-        address bestPair, uint8 bestPoolType, uint bestfee, uint finalAmount, uint256 priceXperY){
-        require(path.length > 1);
-        for(uint8 swapN = 1;swapN < 5;swapN++){
-            for(uint i = 0;i < 4;i++){
-                // address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
-                if(ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]) == address(0)){continue;}
-
-                uint[] memory amounts;
-
-                uint8[] memory poolTypePath = new uint8[](1); poolTypePath[0] = swapN;
-
-                uint[] memory feePath = new uint[](1); feePath[0] = fees[i];
-
-                if(isExactTokensForTokens){
-                    (amounts,) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsOut(amount, path, poolTypePath, feePath);
-                    if(amounts[1] > finalAmount){
-                        finalAmount = amounts[1];
-                        bestPoolType = swapN;
-                        bestfee = fees[i];
-                        bestPair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
-                    }
-                }else{
-                    (amounts,) = ICoinfairWarmRouter(CoinfairWarmRouterAddress).getAmountsIn(amount, path, poolTypePath, feePath);
-                    if(amounts[0] > finalAmount){
-                        finalAmount = amounts[0];
-                        bestPoolType = swapN;
-                        bestfee = fees[i];
-                        bestPair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
-                    }
-                }
-            }
-            if(bestPair != address(0)){
-                (priceXperY,) = calcPriceInstant(bestPair);
-            }
-        }
-    }
-
-    function calcPriceInstant(address pair) internal view returns(uint256 priceXperY, uint256 priceYperX){
-        uint112 r0;
-        uint112 r1;
-        uint e0;
-        uint e1;
-        (r0, r1, ) = ICoinfairPair(pair).getReserves();
-        require(r0 > 0 && r1 > 0);
-        (e0, e1, ) = ICoinfairPair(pair).getExponents();
-        priceXperY = uint(UQ112x112.encode(r0).uqdiv(r1)) * e1 / e0;
-        priceYperX = uint(UQ112x112.encode(r1).uqdiv(r0)) * e0 / e1;
-    }
-
-    // return all pairs and balances belong to usr under the path
-    // function getPairManagement(address[] memory path)public view returns(address[] memory pairs, uint256[] memory balances){
-    function getPairManagement(address[] memory path, address usrAddr)public view returns(usrPoolManagement[] memory UsrPoolManagement_){
-        uint256 index;
-        usrPoolManagement[] memory UsrPoolManagement = new usrPoolManagement[](20);
-        for(uint8 swapN = 1;swapN < 5;swapN++){
-            for(uint i = 0;i < 4;i++){
-                address pair = ICoinfairFactory(CoinfairFactoryAddress).getPair(path[0], path[1], swapN, fees[i]);
-                if(pair == address(0)){continue;}
-                else{
-                    uint256 usrBal = ICoinfairPair(pair).balanceOf(usrAddr);
-                    if(usrBal != 0){
-                        (uint reserve0_, uint reserve1_, ) = ICoinfairPair(pair).getReserves();
-                        UsrPoolManagement[index].usrPair = pair;
-                        UsrPoolManagement[index].poolType = ICoinfairPair(pair).getPoolType();
-                        UsrPoolManagement[index].fee = ICoinfairPair(pair).getFee();
-                        UsrPoolManagement[index].reserve0 = reserve0_;
-                        UsrPoolManagement[index].reserve1 = reserve1_;
-                        UsrPoolManagement[index].usrBal = usrBal;
-                        UsrPoolManagement[index].totalSupply = ICoinfairPair(pair).totalSupply();
-                        index = index + 1;
-                    }
-                }
-            }
-        }
-        UsrPoolManagement_ = new usrPoolManagement[](index);
-        for(uint j = 0;j < index;j++){
-            UsrPoolManagement_[j] = UsrPoolManagement[j];
-        }
-    }
 }

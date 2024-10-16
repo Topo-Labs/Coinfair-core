@@ -37,8 +37,6 @@ describe("Coinfair", function () {
         const Treasury = await hre.ethers.getContractFactory("CoinfairTreasury");
         const treasury = await Treasury.deploy();
 
-
-
         const Factory = await hre.ethers.getContractFactory("CoinfairFactory");
         const factory = await Factory.deploy(treasury.target);
 
@@ -70,14 +68,14 @@ describe("Coinfair", function () {
         )
 
         const StandardToken= await hre.ethers.getContractFactory("StandardToken");
-        // const usdt = await StandardToken.deploy("USDT", "USDT", 100000000000000, hot.target, warm.target);    
         const cf = await StandardToken.deploy("CF", "CF", 100000000000000, hot.target, warm.target);       
         const usdt = await StandardToken.deploy("USDT", "USDT", 100000000000000, hot.target, warm.target);    
+        const usdc = await StandardToken.deploy("USDC", "USDC", 100000000000000, hot.target, warm.target);    
         
         const WETH= await hre.ethers.getContractFactory("WETH");
         const weth = await WETH.deploy();
         
-        return {usr, nft, treasury, factory, hot, warm, cf, usdt, weth, view};
+        return {usr, nft, treasury, factory, hot, warm, cf, usdt, usdc, weth, view};
     }
 
     async function addLiquidity(warm:any, factory:any, usr:any, token0:any, token1:any, amount0:any, amount1:any, poolType:any, fee:any){
@@ -349,10 +347,9 @@ describe("Coinfair", function () {
 
     }
 
-    
     describe("Coinfair", function () {
         it("Should be successfully deployed", async function () {
-          const {usr, nft, treasury, factory, hot, warm, cf, usdt, weth, view} = await loadFixture(deploy);
+          const {usr, nft, treasury, factory, hot, warm, cf, usdt, usdc,  weth, view} = await loadFixture(deploy);
 
           console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
           console.log("ownerAddress:       ",usr[0].address);
@@ -370,21 +367,29 @@ describe("Coinfair", function () {
           console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
           console.log("cf:                 ",cf.target);
           console.log("usdt:               ",usdt.target);
+          console.log("usdc:               ",usdc.target);
           console.log("weth:               ",weth.target);
           console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
+        //   cf:                  0x8A791620dd6260079BF849Dc5567aDC3F2FdC318
+        //   usdt:                0x610178dA211FEF7D417bC0e6FeD39F05609AD788
+        //   usdc:                0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e
+        //   weth:                0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0
 
           console.log(hre.ethers.AbiCoder)
         });
 
-        it("Should successfully all (no fee/no eth)", async function(){
-            const {usr, nft, treasury, factory, hot, warm, cf, usdt} = await loadFixture(deploy);
+        // cf > usdt
+        it("Should successfully all (no fee/no eth) usdt", async function(){
+            const {usr, nft, treasury, factory, hot, warm, cf, usdt, usdc, weth, view} = await loadFixture(deploy);
+            console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
 
-            console.log("test normal pool")
+            console.log("test normal pool usdt")
             await addLiquidity(warm,factory,usr,cf,usdt,200000000000000000000000n,25000000000000000000000n,2,3);
 
             const pair23 = await factory.getPair(cf, usdt, 2, 3);
             const pairContract23 = await hre.ethers.getContractAt("CoinfairPair", pair23);
             let poolType_ = 2;
+
             if(BigInt(cf.target) > BigInt(usdt.target)){
                 if(poolType_ === 2){
                     poolType_ = 3;
@@ -392,6 +397,7 @@ describe("Coinfair", function () {
                     poolType_ = 5;
                 }
             }
+
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[poolType_],[3])
             await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdt, cf],[poolType_],[3])          
             await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdt],[poolType_],[3])
@@ -446,5 +452,79 @@ describe("Coinfair", function () {
                 await (await hre.ethers.getContractAt("CoinfairPair",(await factory.getPair(cf, usdt, 1, 10))))
                     .balanceOf(usr[0]),1,10)
         })
+
+        // cf < usdc
+        it("Should successfully all (no fee/no eth) usdc", async function(){
+            const {usr, nft, treasury, factory, hot, warm, cf, usdt, usdc, weth, view} = await loadFixture(deploy);
+            console.log("\n===== ===== ===== ===== ===== ===== ===== ===== ===== =====\n")
+
+            console.log("test normal pool usdc")
+            await addLiquidity(warm,factory,usr,cf,usdc,200000000000000000000000n,25000000000000000000000n,2,3);
+
+            const pair23 = await factory.getPair(cf, usdc, 2, 3);
+            const pairContract23 = await hre.ethers.getContractAt("CoinfairPair", pair23);
+            let poolType_ = 2;
+            if(BigInt(cf.target) > BigInt(usdc.target)){
+                if(poolType_ === 2){
+                    poolType_ = 3;
+                }else if(poolType_ === 4){
+                    poolType_ = 5;
+                }
+            }
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[poolType_],[3])
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[poolType_],[3])          
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[poolType_],[3])
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[poolType_],[3])     
+
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[poolType_],[3])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[poolType_],[3])             
+
+            await removeLiquidity(warm,factory,usr,cf,usdc,
+                await (await hre.ethers.getContractAt("CoinfairPair",(await factory.getPair(cf, usdc, poolType_, 3))))
+                    .balanceOf(usr[0]),poolType_,3)
+
+            // ========================================================================
+            console.log("test pool 1, 10 without roolover")
+            await addLiquidity(warm,factory,usr,cf,usdc,200000000000000000000000n,25000000000000000000000n,1,10);
+            const pair110 = await factory.getPair(cf, usdc, 1, 10);
+            const pairContract110 = await hre.ethers.getContractAt("CoinfairPair", pair110);
+
+            await treasury.setRoolOver(pairContract110.target,false);
+            console.log("test pool 1, 10 without roolover 1")
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[1],[10])
+            await treasury.setRoolOver(pairContract110.target,true);
+            console.log("test pool 1, 10 and roolover 1")
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[1],[10])
+
+            await treasury.setRoolOver(pairContract110.target,false);
+            console.log("test pool 1, 10 without roolover 2")
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[1],[10])
+            await treasury.setRoolOver(pairContract110.target,true);
+            console.log("test pool 1, 10 and roolover 2")
+            await swapExactTFT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[1],[10])
+            await swapExactTFTSupportFeeOn(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[1],[10])
+
+            await treasury.setRoolOver(pairContract110.target,false);
+            console.log("test pool 1, 10 without roolover 3")
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[1],[10])
+            await treasury.setRoolOver(pairContract110.target,true);
+            console.log("test pool 1, 10 and roolover 3")
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[cf, usdc],[1],[10])
+            
+            await treasury.setRoolOver(pairContract110.target,false);
+            console.log("test pool 1, 10 without roolover 4")
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[1],[10])
+            await treasury.setRoolOver(pairContract110.target,true);
+            console.log("test pool 1, 10 and roolover 4")
+            await swapTFExactT(nft,treasury,hot,factory,usr,1000000000000000000n,[usdc, cf],[1],[10])       
+
+            await removeLiquidity(warm,factory,usr,cf,usdc,
+                await (await hre.ethers.getContractAt("CoinfairPair",(await factory.getPair(cf, usdc, 1, 10))))
+                    .balanceOf(usr[0]),1,10)
+        })
+
     })
 })
