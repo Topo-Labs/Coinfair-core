@@ -1,5 +1,10 @@
 # Coinfair-audit
 
+Update on October 18:
+
+1. **CFV-07**: Comments have been updated.
+2. **CTT-01**: Added reentrancy lock; please check whether this reentrancy lock will prevent the issue.
+
 Update on October 16:
 
 1. **CFT-01:** *The previous explanation was incorrect; the code is fine. Now correcting the explanation.*

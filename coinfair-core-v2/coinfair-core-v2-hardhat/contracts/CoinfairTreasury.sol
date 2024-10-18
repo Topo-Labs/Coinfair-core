@@ -214,6 +214,8 @@ contract CoinfairTreasury is ICoinfairTreasury {
     uint public grandParentAddressLevel2Ratio = 0;
     uint public projectCommunityAddressRatio = 400;
 
+    bool public collectFeeLock;
+
     // CoinfairUsrTreasury[owner][token]
     mapping(address => mapping(address => uint256))public CoinfairUsrTreasury;
     // CoinfairUsrTreasuryTotal[owner][token]
@@ -246,6 +248,8 @@ contract CoinfairTreasury is ICoinfairTreasury {
 
     // usually called by factory, 'approve' operate in factory and 'transfer' operate in treasury
     function collectFee(address token, address owner, uint amount, address pair)public override{
+        require(!collectFeeLock, 'CoinfairTreasury:LOCK');
+        collectFeeLock = true;
         require(token != address(0) && owner != address(0) && amount > 0 && pair != address(0),'CoinfairTreasury:COLLECTFEE ERROR');
         address protocolFeeToAddress = ICoinfairFactory(CoinfairFactoryAddress).feeTo();
         require(protocolFeeToAddress != address(0), 'CoinfairTreasury:FeeTo Is ZERO');
@@ -280,7 +284,7 @@ contract CoinfairTreasury is ICoinfairTreasury {
         }
         
         CoinfairTotalTreasury[token] = CoinfairTotalTreasury[token].add(amount);
-        
+        collectFeeLock = false;
         emit CollectFee(token, owner, amount, pair);
     }
 

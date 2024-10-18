@@ -408,7 +408,7 @@ contract CoinfairPair is ICoinfairPair, CoinfairERC20 {
         require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'Coinfair: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2**32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
-        // 134_217_726 = 2**32 - 1
+        // 134_217_726 = (2**32-1)/32-1
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0 && timeElapsed < 134_217_726) {
             // * never overflows, and + overflow is desired
             price0CumulativeLast += uint(UQ112x112.encode(_reserve1).uqdiv(_reserve0)) * timeElapsed * _exponent0 / _exponent1;
